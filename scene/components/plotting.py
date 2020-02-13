@@ -34,12 +34,18 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 from ...graphics.renderer.lines import ExtendingLineRenderer
-from morphablegraphs.utilities import write_to_json_file
 from .component_base import ComponentBase
 
 #import seaborn as sns; sns.set()
 
 BUFFER_SIZE = 1024000
+
+
+def write_to_json_file(filename, serializable, indent=4):
+    with open(filename, 'w') as outfile:
+        tmp = json.dumps(serializable, indent=4)
+        outfile.write(tmp)
+        outfile.close()
 
 
 def array_to_grid(segment_errors, n_iterations, n_frames):
