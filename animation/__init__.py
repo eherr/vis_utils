@@ -273,17 +273,16 @@ def load_bvh_file(builder, path, scale=1.0, draw_mode=2, offset=None, reference_
     bvh_reader = BVHReader(path)
     bvh_reader.scale(scale)
     animated_joints = [key for key in list(bvh_reader.node_names.keys()) if not key.endswith("EndSite")]
-    skeleton = SkeletonBuilder().load_from_bvh(bvh_reader, animated_joints, reference_frame=reference_frame, skeleton_model=skeleton_model)
-
-    motion_vector = MotionVector()
-    motion_vector.from_bvh_reader(bvh_reader, False)
-    motion_vector.skeleton = skeleton
-    if offset is not None:
-        motion_vector.translate_root(offset)
-    #motion_vector.scale_root(scale)
-    name = path.split("/")[-1]
-    o = builder.create_object("animation_controller", name, skeleton, motion_vector, bvh_reader.frame_time, draw_mode, visualize, color)
-    #builder.create_component("animation_editor",o)
+    o = None
+    if bvh_reader.frames is not None:
+        skeleton = SkeletonBuilder().load_from_bvh(bvh_reader, animated_joints, reference_frame=reference_frame, skeleton_model=skeleton_model)
+        motion_vector = MotionVector()
+        motion_vector.from_bvh_reader(bvh_reader, False)
+        motion_vector.skeleton = skeleton
+        if offset is not None:
+            motion_vector.translate_root(offset)
+        name = path.split("/")[-1]
+        o = builder.create_object("animation_controller", name, skeleton, motion_vector, bvh_reader.frame_time, draw_mode, visualize, color)
     return o
 
 def load_asf_file(builder, filename):
