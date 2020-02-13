@@ -28,13 +28,31 @@ from ..scene.scene_object import SceneObject
 from ..scene.components import ComponentBase
 from ..scene.utils import get_random_color
 from anim_utils.motion_editing.motion_editing import MotionEditing, KeyframeConstraint
-from morphablegraphs import DEFAULT_ALGORITHM_CONFIG
 from anim_utils.motion_editing import FootplantConstraintGenerator, MotionGrounding
 from anim_utils.motion_editing.utils import guess_ground_height, add_heels_to_skeleton
 from anim_utils.animation_data.skeleton_models import STANDARD_MIRROR_MAP, JOINT_CONSTRAINTS
 from anim_utils.animation_data.motion_blending import create_transition_for_joints_using_slerp, BLEND_DIRECTION_FORWARD, BLEND_DIRECTION_BACKWARD, smooth_translation_in_quat_frames
 from anim_utils.motion_editing.cubic_motion_spline import CubicMotionSpline
 
+
+IK_SETTINGS = {
+        "tolerance": 0.05,
+        "optimization_method": "L-BFGS-B",
+        "max_iterations": 1000,
+        "interpolation_window": 120,
+        "transition_window": 60,
+        "use_euler_representation": False,
+        "solving_method": "unconstrained",
+        "activate_look_at": True,
+        "max_retries": 5,
+        "success_threshold": 5.0,
+        "optimize_orientation": True,
+        "elementary_action_max_iterations": 5,
+        "elementary_action_optimization_eps": 1.0,
+        "adapt_hands_during_carry_both": True,
+        "constrain_place_orientation": False,
+        "activate_blending": True
+    }
 
 def flip_coordinate_system(q):
     """
@@ -391,8 +409,8 @@ class AnimationEditorBase(object):
         self.motion_vector = motion_vector
         self.motion_backup = None
         self.constraints = []
-        self.algorithm_config = DEFAULT_ALGORITHM_CONFIG
-        self.motion_editing = MotionEditing(self.skeleton, self.algorithm_config)
+        self.ik_settings = IK_SETTINGS
+        self.motion_editing = MotionEditing(self.skeleton, self.ik_settings)
         self.motion_editing.add_constraints_to_skeleton(JOINT_CONSTRAINTS)
 
         self.edit_stash = list()
