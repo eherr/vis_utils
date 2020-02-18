@@ -82,11 +82,11 @@ class PositionConstraintObject(ConstraintObject):
         ConstraintObject.__init__(self)
         self.name = "position constraint"+str(self.node_id)
         self.scale = radius*2
-        self.visualization = Renderer.SphereRenderer(20, 20, radius, material=materials.red)
+        self.visualization = renderer.SphereRenderer(20, 20, radius, material=materials.red)
         self.coordinateSystem = lines.CoordinateSystemRenderer(self.scale)
-        self.controlKnobX = Renderer.SphereRenderer(20, 20, 0.5, material=materials.red)
-        self.controlKnobY = Renderer.SphereRenderer(20, 20, 0.5, material=materials.green)
-        self.controlKnobZ = Renderer.SphereRenderer(20, 20, 0.5, material=materials.blue)
+        self.controlKnobX = renderer.SphereRenderer(20, 20, 0.5, material=materials.red)
+        self.controlKnobY = renderer.SphereRenderer(20, 20, 0.5, material=materials.green)
+        self.controlKnobZ = renderer.SphereRenderer(20, 20, 0.5, material=materials.blue)
         self.setPosition(position)
         self.active = False
 

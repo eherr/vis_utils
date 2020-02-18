@@ -31,7 +31,7 @@ from .skeleton_visualization import SkeletonVisualization
 from .motion_state_machine import MotionStateMachineController
 from ..graphics import materials
 from ..io import  load_json_file
-from ..scene.components import AnimatedMeshComponentLegacy, AnimatedMeshComponent, StaticMesh
+from ..scene.components import AnimatedMeshComponent, StaticMesh
 from ..scene.scene_object_builder import SceneObjectBuilder, SceneObject
 from ..scene.utils import get_random_color
 from anim_utils.animation_data import BVHReader, MotionVector, SkeletonBuilder, parse_asf_file

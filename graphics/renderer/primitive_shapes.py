@@ -508,48 +508,6 @@ class SphereRenderer(DirectionalShadedIndexRenderer):
         return result
 
 
-    def draw2(self,modelMatrix,viewMatrix,projectionMatrix,lightSources):
-        glUseProgram(self.technique.shader)
-        glEnableClientState(GL_VERTEX_ARRAY)
-        self.indexPositions.bind()
-        self.vertexPositions.bind()
-        #upload MVP matrix
-        glUniformMatrix4fv(glGetUniformLocation(self.shader,"modelMatrix"), 1, GL_FALSE, modelMatrix)
-        glUniformMatrix4fv(glGetUniformLocation(self.shader,"viewMatrix"), 1, GL_FALSE, viewMatrix)
-        glUniformMatrix4fv(glGetUniformLocation(self.shader,"projectionMatrix"), 1, GL_FALSE, projectionMatrix)
-
-        #upload light
-        glUniform3f(glGetUniformLocation(self.shader,"light.ambient_color"),  lightSources[0].ambient_color.x,lightSources[0].ambient_color.y,lightSources[0].ambient_color.z)
-        glUniform3f(glGetUniformLocation(self.shader,"light.diffuse_color"),  lightSources[0].diffuse_color.x,lightSources[0].diffuse_color.y,lightSources[0].diffuse_color.z)
-        glUniform3f(glGetUniformLocation(self.shader,"light.specular_color"),lightSources[0].specular_color.x,lightSources[0].specular_color.y,lightSources[0].specular_color.z)
-        glUniform3f(glGetUniformLocation(self.shader,"light.position"),  lightSources[0].position.x,lightSources[0].position.y,lightSources[0].position.z)
-        glUniform3f(glGetUniformLocation(self.shader,"lightPos"),  lightSources[0].position.x,lightSources[0].position.y,lightSources[0].position.z)
-        viewer_pos = viewMatrix[3,:]
-        glUniform3f(glGetUniformLocation(self.shader,"viewerPos"),  viewer_pos[0],viewer_pos[1],viewer_pos[2])
-
-        #upload material properties
-        glUniform3f(glGetUniformLocation(self.shader,"material.ambient_color"), self.material.ambient_color.x,self.material.ambient_color.y,self.material.ambient_color.z)
-        glUniform3f(glGetUniformLocation(self.shader,"material.diffuse_color"), self.material.diffuse_color.x,self.material.diffuse_color.y,self.material.diffuse_color.z)
-        glUniform3f(glGetUniformLocation(self.shader,"material.specular_color"),self.material.specular_color.x,self.material.specular_color.y,self.material.specular_color.z)
-        glUniform1f(glGetUniformLocation(self.shader,"material.specular_shininess"),self.material.specular_shininess)
-
-        glEnableVertexAttribArray( self.vertex_loc )
-
-        glVertexAttribPointer( self.vertex_loc, 3, GL_FLOAT,False, 24, self.vertexPositions ) #The starting point of the VBO, for the vertices
-        glEnableVertexAttribArray( self.vertex_normal_loc )
-        glVertexAttribPointer( self.vertex_normal_loc, 3, GL_FLOAT,False, 24, self.vertexPositions+12 )   #skip 6 bytes to get to the next element of the interleaved vertex array
-        glDrawElements(GL_TRIANGLES, self.numIndices, GL_UNSIGNED_INT, None)
-        #glDrawArrays(self.vertex_array_type , 0, self.numVertices)#TRIANGLES
-        self.vertexPositions.unbind()
-        self.indexPositions.unbind()
-
-        glDisableVertexAttribArray(self.vertex_loc )
-        glDisableVertexAttribArray(self.vertex_normal_loc )
-
-        glDisableClientState(GL_VERTEX_ARRAY)
-        glUseProgram(0)
-
-
 class BoxRenderer(DirectionalShadedGeometryRenderer):
     def __init__(self, width, height, depth, material=None):
         if material is None:

@@ -51,12 +51,10 @@ class StaticMesh(ComponentBase):
                 if not texture_name.endswith(b'Hair_texture_big.png'):
                     geom = Mesh.build_from_desc(m_desc, material)
                     self.meshes.append(geom)
-                #self.meshes.append(Renderer.TexturedMeshRenderer(position, m_desc, material))
             else:
                 print("create untextured mesh")
                 geom = Mesh.build_from_desc(m_desc)
                 self.meshes.append(geom)
-                #self.meshes.append(Renderer.ColoredMeshRenderer(position, m_desc))
 
     def draw(self, modelMatrix, viewMatrix, projectionMatrix, lightSources):
         return

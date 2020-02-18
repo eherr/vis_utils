@@ -1,4 +1,4 @@
-from .animated_mesh import AnimatedMeshComponentLegacy, AnimatedMeshComponent
+from .animated_mesh import AnimatedMeshComponent
 from .component_base import ComponentBase
 from .geometry_data import GeometryDataComponent
 from .static_mesh import StaticMesh

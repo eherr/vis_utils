@@ -273,9 +273,7 @@ class DirectionalShadingTechnique(Technique):
     def prepare(self, modelMatrix, viewMatrix, projectionMatrix, lightSources):
         glUseProgram(self.shader)
         # set MVP matrix
-
         self.upload_mvp(modelMatrix, viewMatrix, projectionMatrix)
-        #self.upload_material()
         # upload light
         self.upload_lights(lightSources)
 
