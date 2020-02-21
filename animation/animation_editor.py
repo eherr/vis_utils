@@ -411,7 +411,8 @@ class AnimationEditorBase(object):
         self.constraints = []
         self.ik_settings = IK_SETTINGS
         self.motion_editing = MotionEditing(self.skeleton, self.ik_settings)
-        self.motion_editing.add_constraints_to_skeleton(JOINT_CONSTRAINTS)
+        if skeleton.skeleton_model is not None and "joint_constraints" in skeleton.skeleton_model:
+            self.motion_editing.add_constraints_to_skeleton(skeleton.skeleton_model["joint_constraints"])
 
         self.edit_stash = list()
         self.command_history = list()
