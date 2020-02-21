@@ -24,7 +24,7 @@ def print_global_vars(dt, app):
 
     
 def control_func(key, params):
-    app, controller,skeleton_mirror = params
+    app, controller = params
     if key == str.encode(" "):
         controller.toggleAnimation()
     elif key == str.encode("l"):
