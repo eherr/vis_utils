@@ -27,7 +27,6 @@ import collections
 from .scene_graph import SceneGraph
 from .scene_object_builder import SceneObjectBuilder
 import numpy as np
-from .components.scene_rest_interface import SceneRESTInterface
 from .components.terrain_component import TerrainComponent
 from .scene_object import SceneObject
 from threading import Lock
@@ -206,13 +205,6 @@ class Scene(SceneGraph):
         task = FuncCallTask(func_name, func, params, self, self.task_manager)
         self.task_manager.add(func_name, task)
 
-def create_scene_rest_interface(builder, port):
-    scene_object = SceneObject()
-    builder._scene.addObject(scene_object)
-    scene_rest_interface = SceneRESTInterface(scene_object, port)
-    scene_object.add_component("scene_rest_interface", scene_rest_interface)
-    return scene_object
-
 
 
 def create_terrain(builder, width, depth, height_map_image, height_map_scale):
@@ -231,4 +223,3 @@ def create_terrain(builder, width, depth, height_map_image, height_map_scale):
 
 
 SceneObjectBuilder.register_object("terrain", create_terrain)
-SceneObjectBuilder.register_object("scene_rest_interface", create_scene_rest_interface)
