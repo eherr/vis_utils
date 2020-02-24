@@ -84,6 +84,9 @@ class CameraController(object):
 
 
 DEFAULT_CLEAR_COLOR = [0,0,0]
+LEFT_MOUSE_BUTTON = 0
+MOUSE_BUTTON_STATE_DOWN = 0
+MOUSE_BUTTON_STATE_UP = 1
 
 
 class GLUTApp(object):
@@ -128,9 +131,9 @@ class GLUTApp(object):
 
         self.camera_controller = CameraController(self.graphics_context.camera, camera_pose)
 
-        glutMouseFunc(self.camera_controller.mouse)
-        glutMotionFunc(self.camera_controller.mouse_motion)
-        glutMouseWheelFunc(self.camera_controller.mouse_wheel)
+        glutMouseFunc(self.mouse_click)
+        glutMotionFunc(self.mouse_motion)
+        glutMouseWheelFunc(self.mouse_wheel)
         glClearColor(0.0, 0.0, 0.0, 1.0)
         self.keyboard_handler = dict()
         self.last_time = time.perf_counter()
@@ -141,7 +144,7 @@ class GLUTApp(object):
         self.last_click_position = np.zeros(3)
         self.mutex = threading.Lock()
         self.synchronize_updates = True
-        self.fixed_dt = True
+        self.enable_object_selection = False
         self.clear_color = clear_color
         self.use_shadows = use_shadows
         self.use_frame_buffer = use_frame_buffer
@@ -216,8 +219,8 @@ class GLUTApp(object):
             step_idx += 1
             self.scene.global_vars["step"] += 1
 
-    def save_screenshot(self):
-        self.graphics_context.frame_buffer.save_to_file("framebuffer.png")
+    def save_screenshot(self, filename="framebuffer.png"):
+        self.graphics_context.frame_buffer.save_to_file(filename)
 
     def get_screenshot(self):
         return self.graphics_context.frame_buffer.to_image()
@@ -225,3 +228,27 @@ class GLUTApp(object):
     def set_console_lines(self, lines):
         self.console.set_lines(lines)
 
+    def mouse_click(self, button, state, x, y):
+        self.camera_controller.mouse(button, state, x, y)
+        if not self.enable_object_selection:
+            return
+        if button == LEFT_MOUSE_BUTTON:
+            if state == MOUSE_BUTTON_STATE_DOWN:
+                ray_start, ray_dir = self.graphics_context.get_ray_from_click(x, y)
+                node_id = -1
+                if self.use_frame_buffer:
+                    node_id = self.graphics_context.get_id_from_color_buffer(x,y)
+                if node_id <= 0:
+                    node_id = -1
+                self.scene.select_object(node_id, (ray_start, ray_dir))
+            elif state == MOUSE_BUTTON_STATE_UP:
+                self.scene.deactivate_axis()
+
+    def mouse_motion(self, x, y):
+        self.camera_controller.mouse_motion(x, y)
+        if self.enable_object_selection:
+            cam_pos, cam_ray = self.graphics_context.get_ray_from_click(x, y)
+            self.scene.handle_mouse_movement(cam_pos[:3], cam_ray[:3])
+
+    def mouse_wheel(self, wheel, direction, x, y):
+        self.camera_controller.mouse_wheel(wheel, direction, x, y)

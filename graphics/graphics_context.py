@@ -136,7 +136,6 @@ class GraphicsContext(object):
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) #we're not using the stencil buffer now
 
             #draw local coordinate system of orbiting camera
-
             if self.show_color_renderer:
                 self.color_picking_renderer.render_scene(object_list, p_m, v_m, scene.scene_edit_widget)
             else:
@@ -178,7 +177,6 @@ class GraphicsContext(object):
         color = glReadPixels(wx, wy, 1, 1, GL_RGBA, GL_FLOAT)[0][0]
         self.color_buffer.unbind()
         object_id = getIfromRGB(color)
-        #print(color, id)
         return object_id
 
     def get_position_from_click(self, x, y):
@@ -198,8 +196,37 @@ class GraphicsContext(object):
         view = np.array(self.camera.get_view_matrix(), dtype=np.double)
         proj = np.array(self.camera.get_projection_matrix(), dtype=np.double)
         p = gluUnProject(wx, wy, wz, view, proj, viewport)
-        #print("click", p)
         return p
+
+    def get_ray_from_click(self, x, y):
+        """ copied from http://antongerdelan.net/opengl/raycasting.html and translated into Python
+            returns origin and direction of the ray
+        """
+        # use camera position as origin of the ray
+        ray_start = self.camera.get_world_position()
+
+        # transform window X and Y into normalized device coordinates range [-1:1]
+        width = self.width
+        height = self.height
+        ndc_X = ((2.0*x)/width)-1.0
+        ndc_Y = 1.0 - ((2.0*y)/height)
+
+        # convert to clipping coordinates range [-1:1, -1:1, -1:1, -1:1]
+        cc = [0,0,0,0]
+        cc[0] = ndc_X
+        cc[1] = ndc_Y
+        cc[2] = -1.0  # let ray point forward in negative -z direction
+        cc[3] = 1.0
+
+        # unproject x y part of clipping coordinates
+        ray_eye = np.dot(self.camera.get_inv_projection_matrix().T, cc)
+        ray_eye[2] = -1.0
+        ray_eye[3] = 0.0
+
+        # get world coordinates
+        ray_world = np.dot(self.camera.get_inv_view_matrix().T, ray_eye)
+        ray_world /= np.linalg.norm(ray_world)
+        return np.array([ray_start[0], ray_start[1], ray_start[2], 0]), ray_world
 
     def rotate_left(self):
         self.camera.updateRotationMatrix(self.camera.pitch, self.camera.yaw + 15)
