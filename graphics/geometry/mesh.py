@@ -194,8 +194,8 @@ class Mesh(object):
             uvs = desc["texture_coordinates"]
             uv_pos = offset
             offset += 8
-        if "weights" in desc and False:
-            weights = desc["weights"]
+        if "weights" in desc and "joint_indices" in desc:
+            weights = list(zip(desc["joint_indices"], desc["weights"]))
             bone_id_pos = offset
             weight_pos = offset + 16
             offset += 32
@@ -301,12 +301,15 @@ class Mesh(object):
         normals = desc["normals"]
         uvs = desc["texture_coordinates"]
         indices = desc["indices"]
-        weights = desc["weights"]
+        
+        if "joint_indices" in desc:
+            weights = list(zip(desc["joint_indices"], desc["weights"]))
+        else:
+            weights = desc["weights"]
         n_vertices = len(vertices)
         n_uvs = len(uvs)
         n_normals = len(normals)
         n_weights = len(weights)
-        #index_list = []
         vertex_list = None
         print("loaded mesh", n_vertices, n_normals, n_uvs, n_weights)
         if n_normals == n_vertices and n_uvs == n_vertices:
@@ -320,15 +323,10 @@ class Mesh(object):
                 if len(weights) > 0:
                     bids = weights[idx][0]
                     bw = weights[idx][1]
-
-                entry = v + n + t + bids + bw
+                #entry = v + n  + bids + bw
                 data.append(entry)
                 #index_list.append(idx)
             vertex_list = data
-        #normal_pos = 12
-        #uv_pos = 24
-        #bone_id_pos = 30
-        #weight_pos = 36
 
         color_pos = -1
 
