@@ -8,6 +8,10 @@ http://www.lighthouse3d.com/tutorials
 https://www.youtube.com/user/ThinMatrix  
 
 
+Note: To use the library on Windows, please install the PyOpenGL wheel provided by Cristoph Gohlke which also contains the GLUT-DLLs:
+https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopengl
+
+
 ## Example 
 
 ```python   
