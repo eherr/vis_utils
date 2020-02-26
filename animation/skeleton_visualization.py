@@ -58,7 +58,7 @@ class SkeletonVisualization(ComponentBase):
     def set_skeleton(self, skeleton, visualize=True, scale=1.0):
         self.visualize = visualize
         self.skeleton = skeleton
-        self._joints = [j for j in list(self.skeleton.get_joint_names())]
+        self._joints = skeleton.animated_joints
         self._parents_map = dict()
         for idx, j in enumerate(self._joints):
             if self.skeleton.nodes[j].parent is not None:
@@ -72,6 +72,7 @@ class SkeletonVisualization(ComponentBase):
         if visualize:
             self._create_shapes(scale)
             self.debug_skeleton = DebugSkeletonRenderer(skeleton, self._joints, self.color)
+            
 
     def _create_shapes(self, scale=1.0):
         self.box_scale = scale

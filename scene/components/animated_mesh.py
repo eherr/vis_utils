@@ -52,6 +52,7 @@ class AnimatedMeshComponent(ComponentBase):
         material_manager = MaterialManager()
 
         for m_desc in mesh_list:
+            geom = None
             if "material" in m_desc and "Kd" in list(m_desc["material"].keys()):
                 texture_name = m_desc["texture"]
                 if texture_name is not None and texture_name.endswith(b'Hair_texture_big.png'):
@@ -62,11 +63,12 @@ class AnimatedMeshComponent(ComponentBase):
                     material_manager.set(m_desc["texture"], material)
                 print("reuse material", m_desc["texture"])
                 geom = Mesh.build_legacy_animated_mesh(m_desc, material)
-                if geom is not None:
-                    self.meshes.append(geom)
+            else:
+                geom = Mesh.build_from_desc(m_desc, materials.red)
+            if geom is not None:
+                self.meshes.append(geom)
         self.inv_bind_poses = []
         for idx, name in enumerate(skeleton_def["animated_joints"]):
-             print(idx, name)
              inv_bind_pose = skeleton_def["nodes"][name]["inv_bind_pose"]
              self.inv_bind_poses.append(inv_bind_pose)
         self.vertex_weight_info = [] # store for each vertex a list of tuples with bone id and weights
@@ -83,7 +85,6 @@ class AnimatedMeshComponent(ComponentBase):
         bone_matrices = []
         for idx in range(len(self.inv_bind_poses)):
             m = np.dot(matrices[idx], self.inv_bind_poses[idx])
-
             bone_matrices.append(m)
         return np.array(bone_matrices)
 

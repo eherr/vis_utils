@@ -207,6 +207,10 @@ class Mesh(object):
             index_list = desc["indices"]
             vertex_list = combine_vertex_list_from_indices(index_list, vertices, normals, colors, uvs, weights, shift)
             index_list = None
+        else:
+            index_list = list(range(len(vertices)))
+            vertex_list = combine_vertex_list_from_indices(index_list, vertices, normals, colors, uvs, weights, shift)
+            index_list = None
         print("offset",offset, desc.keys())
         return Mesh(vertex_list, array_type, normal_pos=normal_pos, color_pos=color_pos,
                     uv_pos=uv_pos, weight_pos=weight_pos,
