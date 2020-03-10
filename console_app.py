@@ -76,7 +76,6 @@ class ConsoleApp(object):
         self.scene.after_update(dt)
         self.next_time = self.last_time + self.interval
         self.scene.global_vars["fps"] = fps
-        print(fps)
 
     def run(self):
         print("run")

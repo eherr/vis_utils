@@ -110,7 +110,6 @@ class LeanGLUTApp(object):
         self.render()
         self.next_time = self.last_time + self.interval
         self.scene.global_vars["fps"] = fps
-        print(fps)
 
     def update_scene(self, dt):
         self.mutex.acquire()

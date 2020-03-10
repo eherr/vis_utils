@@ -219,7 +219,6 @@ class PyGameApp(object):
             self.update(dt)
             self.draw()
             self.next_time = self.last_time + self.interval
-            print(fps)
 
     def run_steps(self):
         self.keyboard_handler["step_control"] = (step_control, self.scene)
