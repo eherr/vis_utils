@@ -27,6 +27,7 @@ from .component_base import ComponentBase
 from ...graphics import materials
 from ...graphics import renderer
 from ...graphics.material_manager import MaterialManager
+from ...graphics.materials import TextureMaterial
 
 SKELETON_NODE_TYPE_ROOT = 0
 SKELETON_NODE_TYPE_JOINT = 1
@@ -53,16 +54,21 @@ class AnimatedMeshComponent(ComponentBase):
 
         for m_desc in mesh_list:
             geom = None
-            if "material" in m_desc and "Kd" in list(m_desc["material"].keys()):
-                texture_name = m_desc["texture"]
-                if texture_name is not None and texture_name.endswith(b'Hair_texture_big.png'):
-                    continue
-                material = material_manager.get(m_desc["texture"])
-                if material is None:
-                    material = materials.TextureMaterial.from_image(m_desc["material"])
-                    material_manager.set(m_desc["texture"], material)
-                print("reuse material", m_desc["texture"])
-                geom = Mesh.build_legacy_animated_mesh(m_desc, material)
+            if "material" in m_desc:
+                material = None
+                if "Kd" in m_desc["material"]:
+                    texture_name = m_desc["texture"]
+                    if texture_name is not None and texture_name.endswith(b'Hair_texture_big.png'):
+                        continue
+                    material = material_manager.get(m_desc["texture"])
+                    if material is None:
+                        material = materials.TextureMaterial.from_image(m_desc["material"]["Kd"])
+                        material_manager.set(m_desc["texture"], material)
+                elif "albedo_texture" in m_desc["material"]:
+                    material = TextureMaterial.from_image(m_desc["material"]["albedo_texture"])
+                
+                #geom = Mesh.build_legacy_animated_mesh(m_desc, material)
+                geom = Mesh.build_from_desc(m_desc, material)
             else:
                 geom = Mesh.build_from_desc(m_desc, materials.red)
             if geom is not None:
@@ -81,12 +87,10 @@ class AnimatedMeshComponent(ComponentBase):
         return
 
     def get_bone_matrices(self):
-        matrices = self.anim_controller.get_bone_matrices()
-        bone_matrices = []
-        for idx in range(len(self.inv_bind_poses)):
-            m = np.dot(matrices[idx], self.inv_bind_poses[idx])
-            bone_matrices.append(m)
-        return np.array(bone_matrices)
+        matrices = np.array(self.anim_controller.get_bone_matrices())
+        for idx, inv_m in enumerate(self.inv_bind_poses):
+            matrices[idx] = np.dot(matrices[idx],inv_m)
+        return matrices
 
     def scale_mesh(self, scale_factor):
         for m in self.meshes:
