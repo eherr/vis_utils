@@ -41,25 +41,25 @@ class SceneObject(SceneGraphNode):
         self.visible = True
 
     def handle_keyboard_input(self, key):
-        for component in list(self._components.values()):
+        for component in self._components.values():
             component.handle_keyboard_input(key)
 
     def before_update(self, dt):
 
-        for component in list(self._components.values()):
+        for component in self._components.values():
             component.before_update(dt)
 
     def update(self, dt):
         """needs to be implemented e.g. to set the model matrix of the visualization or update an animation"""
-        for component in list(self._components.values()):
+        for component in self._components.values():
             component.update(dt)
 
     def after_update(self, dt):
-        for component in list(self._components.values()):
+        for component in self._components.values():
             component.after_update(dt)
 
     def sim_update(self, dt):
-        for component in list(self._components.values()):
+        for component in self._components.values():
             component.sim_update(dt)
 
     def draw(self, viewMatrix, projectionMatrix, lightSources):
@@ -68,7 +68,7 @@ class SceneObject(SceneGraphNode):
         if self.visualization is not None and self.visible:
             self.visualization.draw(m, viewMatrix, projectionMatrix, lightSources)
 
-        for component in list(self._components.values()):
+        for component in self._components.values():
             if component.visible:
                 component.draw(m, viewMatrix, projectionMatrix, lightSources)
 
@@ -85,23 +85,23 @@ class SceneObject(SceneGraphNode):
         self._components[name] = component
 
     def _remove_component(self, name):
-        if name in list(self._components.keys()):
+        if name in self._components.keys():
             del self._components[name]
 
     def has_component(self, name):
-        return name in list(self._components.keys())
+        return name in self._components.keys()
 
     def set_attribute(self, name, value):
-        for component in list(self._components.values()):
+        for component in self._components.values():
             #print(component)
             if hasattr(component, name):
                 func = getattr(component, name)
                 func(value)
 
     def get_attribute(self, name):
-        for component in list(self._components.values()):
-            if hasattr(component, name):
-                func = getattr(component, name)
+        for k in self._components:
+            if hasattr(self._components[k], name):
+                func = getattr(self._components[k], name)
                 return func()
         return None
 
@@ -141,7 +141,7 @@ class SceneObject(SceneGraphNode):
 
     def cleanup(self):
         print("cleanup", self.node_id)
-        for key in list(self._components.keys()):
+        for key in self._components.keys():
             if hasattr(self._components[key], "cleanup"):
                 self._components[key].cleanup()
 
