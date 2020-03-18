@@ -28,6 +28,9 @@ class GeometryDataComponent(ComponentBase):
         ComponentBase.__init__(self, scene_object)
         self._scene_object = scene_object
         self.geometry = geometry
+        self.meshes = [self.geometry]
 
+    def get_meshes(self):
+        return self.meshes
 
 

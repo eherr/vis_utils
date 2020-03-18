@@ -98,3 +98,9 @@ class AnimatedMeshComponent(ComponentBase):
         for idx, m in enumerate(self.inv_bind_poses):
             self.inv_bind_poses[idx][:3, 3] *= scale_factor
 
+    def prepare_rendering(self, renderer):
+        bone_matrices = self.get_bone_matrices()
+        renderer.upload_bone_matrices(bone_matrices)#  bone matrices once
+
+    def get_meshes(self):
+        return self.meshes

@@ -34,6 +34,19 @@ class SceneObject(SceneGraphNode):
         self.clickable = True
         self._components = dict()
 
+    def prepare_rendering(self, renderer):
+        for k in self._components:
+            if hasattr(self._components[k], "prepare_rendering"):
+                self._components[k].prepare_rendering(renderer)
+
+    def get_meshes(self):
+        meshes = []
+        for k in self._components:
+            if hasattr(self._components[k], "get_meshes"):
+                meshes += self._components[k].get_meshes()
+        return meshes
+
+
     def hide(self):
         self.visible = False
 

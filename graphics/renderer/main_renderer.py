@@ -126,16 +126,9 @@ class MainRenderer(Renderer):
         for o in object_list:
             if not o.visible:
                 continue
-            if "geometry" in o._components:
-                self.render(o.transformation, o._components["geometry"].geometry)
-            if "static_mesh" in o._components:
-                for geom in o._components["static_mesh"].meshes:
-                    self.render(o.transformation, geom)
-            if "animated_mesh" in o._components and o._components["animated_mesh"].visible:
-                bone_matrices = o._components["animated_mesh"].get_bone_matrices()
-                self.upload_bone_matrices(bone_matrices)#  bone matrices once
-                for geom in o._components["animated_mesh"].meshes:
-                    self.render(o.transformation, geom)
+            o.prepare_rendering(self)
+            for geom in o.get_meshes():
+                self.render(o.transformation, geom)
             if "skeleton_vis" in o._components and o._components["skeleton_vis"].visible:
                 skeleton = o._components["skeleton_vis"]
                 if skeleton.draw_mode == 2:#only draw boxes
@@ -151,7 +144,6 @@ class MainRenderer(Renderer):
                         m = state[idx]
                         for geom in skeleton.shapes[key]:
                             self.render(np.dot(geom.transform, m), geom)
-                        
             if "character" in o._components and o._components["character"].visible:
                 char = o._components["character"]
                 for key, geom in char.body_shapes.items():
@@ -166,8 +158,6 @@ class MainRenderer(Renderer):
                         self.render(s["body_matrices"][key], geom, s["materials"][key])
                     for key, geom in char.joint_shapes.items():
                         self.render(s["joint_matrices"][key], geom)
-            if "terrain" in o._components:
-                self.render(o.transformation, o._components["terrain"].mesh)
             if "collision_boundary" in o._components:
                 c = o._components["collision_boundary"]
                 self.render(c.transformation, c.mesh)

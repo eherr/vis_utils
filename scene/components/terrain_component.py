@@ -30,6 +30,7 @@ class TerrainComponent(ComponentBase):
         self.width = width
         self.depth = depth
         self.mesh = mesh
+        self.meshes = [mesh]
         self.height_map_scale = height_map_scale
         self.height_image = height_image
 
@@ -56,3 +57,6 @@ class TerrainComponent(ComponentBase):
         iy = relative_z*height_map_image.size[1]
         p = self.height_image.getpixel((ix, iy))
         return (p[0]/255)*self.height_map_scale
+
+    def get_meshes(self):
+        return self.meshes
