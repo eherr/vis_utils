@@ -65,3 +65,6 @@ class StaticMesh(ComponentBase):
         return
         for m in self.meshes:
             m.draw(modelMatrix, viewMatrix, projectionMatrix, lightSources)
+
+    def get_meshes(self):
+        return self.meshes

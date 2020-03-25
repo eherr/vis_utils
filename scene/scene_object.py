@@ -42,7 +42,7 @@ class SceneObject(SceneGraphNode):
     def get_meshes(self):
         meshes = []
         for k in self._components:
-            if hasattr(self._components[k], "get_meshes"):
+            if hasattr(self._components[k], "get_meshes") and self._components[k].visible:
                 meshes += self._components[k].get_meshes()
         return meshes
 
