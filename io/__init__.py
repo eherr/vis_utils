@@ -29,6 +29,7 @@ from vis_utils.graphics.geometry.mesh import Mesh
 from .utils import load_json_file, save_json_file, load_latest_json_file
 from .obj_format import load_mesh_from_ob_file, load_materials_from_mtl_file, load_obj_file
 from .fbx_format import load_model_from_fbx_file
+from .gltf import load_model_from_gltf_file
 
 
 def load_collada_file(builder, file_path):
@@ -141,9 +142,23 @@ def load_fbx_file(builder, file_path, scale=1.0, visualize=True,  load_skeleton=
     return scene_object
 
 
+def load_gltf_file(builder, file_path, scale=1.0, visualize=True,  load_skeleton=True):
+    model_data = load_model_from_gltf_file(file_path)
+    if model_data is None:
+        return None
+    name = file_path.split("/")[-1]
+    if load_skeleton and "skeleton" in model_data and model_data["skeleton"] is not None:
+        scene_object = builder.create_object("animated_mesh", name, model_data, scale, visualize)
+        builder._scene.register_animation_controller(scene_object, "animation_controller")
+    else:
+        scene_object = builder.create_object("static_mesh", name, model_data, scale)
+    builder._scene.addObject(scene_object)
+    return scene_object
 
 SceneObjectBuilder.register_object("mesh_list", create_static_mesh)
 SceneObjectBuilder.register_file_handler("obj", load_mesh_from_obj_file)
 SceneObjectBuilder.register_file_handler("dae", load_collada_file)
 SceneObjectBuilder.register_file_handler("_constraints.json", load_unity_constraints)
 SceneObjectBuilder.register_file_handler("fbx", load_fbx_file)
+SceneObjectBuilder.register_file_handler("gltf", load_gltf_file)
+SceneObjectBuilder.register_file_handler("glb", load_gltf_file)

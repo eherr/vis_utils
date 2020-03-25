@@ -41,19 +41,24 @@ class StaticMesh(ComponentBase):
                 print("error vertices and normals do are not the same count",n_vertices, n_normals)
                 continue
 
-            if "material" in m_desc and "Kd" in list(m_desc["material"].keys()):
-                material = material_manager.get(m_desc["texture"])
-                if material is None:
-                    material = materials.TextureMaterial.from_image(m_desc["material"])
-                    material_manager.set(m_desc["texture"], material)
-                texture_name = m_desc["texture"]
-                print("reuse material", texture_name)
-                if not texture_name.endswith(b'Hair_texture_big.png'):
+            if "material" in m_desc:
+                if "Kd" in list(m_desc["material"].keys()):
+                    material = material_manager.get(m_desc["texture"])
+                    if material is None:
+                        material = materials.TextureMaterial.from_image(m_desc["material"])
+                        material_manager.set(m_desc["texture"], material)
+                    texture_name = m_desc["texture"]
+                    print("reuse material", texture_name)
+                    if not texture_name.endswith(b'Hair_texture_big.png'):
+                        geom = Mesh.build_from_desc(m_desc, material)
+                        self.meshes.append(geom)
+                elif "albedo_texture" in m_desc["material"]: 
+                    material = materials.TextureMaterial.from_image(m_desc["material"]["albedo_texture"])
                     geom = Mesh.build_from_desc(m_desc, material)
                     self.meshes.append(geom)
             else:
                 print("create untextured mesh")
-                geom = Mesh.build_from_desc(m_desc)
+                geom = Mesh.build_from_desc(m_desc, material=materials.red)
                 self.meshes.append(geom)
 
     def draw(self, modelMatrix, viewMatrix, projectionMatrix, lightSources):

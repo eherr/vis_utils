@@ -43,9 +43,9 @@ class TextureMaterial(Material):
 
     @classmethod
     def from_image(cls, image):
-        print(image)
-        texture = Texture.from_image(image["Kd"])
+        texture = Texture.from_image(image)
         return TextureMaterial(texture)
+
 
 
 class HeightMapMaterial(TextureMaterial):

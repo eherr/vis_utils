@@ -109,6 +109,49 @@ def create_clip_from_reference_frame(skeleton):
     clip.frames = np.array([frame])
     return clip
 
+def get_n_frames(anim):
+    n_frames = 0
+    for k in anim:
+        for c in anim[k]:
+            _n_frames = len(anim[k][c])
+            if _n_frames > n_frames:
+                n_frames = _n_frames
+    return n_frames
+
+
+def convert_q(q):
+    q = [-q[3], -q[0], q[1], q[2]]
+    return q
+
+
+def create_clip_from_animation(skeleton, anim):
+    n_joints = len(skeleton.animated_joints)
+    n_frames =  get_n_frames(anim)
+    n_dims = 3+n_joints*4
+    frames = np.zeros((n_frames, n_dims))
+    offset = 3
+    print(anim.keys(), skeleton.animated_joints)
+    print("found the following animations")
+    for j in anim:
+        for c in anim[j]:
+            print(j, c, n_frames)
+    print()
+    for joint_name in skeleton.animated_joints:
+        if joint_name in anim and "rotation" in anim[joint_name]:
+            a_func = anim[joint_name]["rotation"]
+            new_values = np.array(a_func)[:,1]
+            for frame_idx in range(n_frames):
+                frames[frame_idx][offset:offset + 4]= convert_q(new_values[frame_idx])
+        else:
+            for frame_idx in range(n_frames):
+                frames[frame_idx][offset:offset + 4] = skeleton.nodes[joint_name].rotation
+        offset+=4
+
+    clip = MotionVector(skeleton)
+    clip.n_frames = n_frames
+    clip.frames = frames
+    return clip
+
 def create_animation_controller_from_fbx(builder, name, skeleton_data):
     skeleton = SkeletonBuilder().load_from_fbx_data(skeleton_data)
     scene_object = SceneObject()
@@ -140,6 +183,7 @@ def create_animated_mesh(builder, name, model_data, scale=1, visualize=True):
 
     skeleton_data = model_data["skeleton"]
     skeleton = SkeletonBuilder().load_from_fbx_data(skeleton_data)
+    skeleton.skeleton_model = dict()
     skeleton.scale(scale)
 
     vis = None
@@ -148,8 +192,12 @@ def create_animated_mesh(builder, name, model_data, scale=1, visualize=True):
         #vis.box_scale = 0.1
     
     animation_controller = SkeletonAnimationController(scene_object)
-    clip = create_clip_from_reference_frame(skeleton)
-    clip.scale_root(scale)
+    if "animations" in model_data and len(model_data["animations"])>0:
+        clip = create_clip_from_animation(skeleton,  model_data["animations"])
+        clip.scale_root(scale)
+    else:
+        clip = create_clip_from_reference_frame(skeleton)
+        clip.scale_root(scale)
     animation_controller.name = scene_object.name
     animation_controller.set_motion(clip)
     animation_controller.set_visualization(vis, 1)
