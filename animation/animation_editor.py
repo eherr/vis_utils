@@ -662,9 +662,9 @@ class AnimationEditorBase(object):
 class AnimationEditor(AnimationEditorBase, ComponentBase):
     def __init__(self, scene_object):
         ComponentBase.__init__(self, scene_object)
-        self._animation_controller =  scene_object._components["animation_controller"]
+        self._animation_controller = scene_object._components["animation_controller"]
         skeleton = self._animation_controller._visualization.skeleton
-        if skeleton.skeleton_model is not None:
+        if skeleton.skeleton_model is None:
             skeleton.skeleton_model = dict()
         AnimationEditorBase.__init__(self, skeleton, self._animation_controller._motion.mv)
     
