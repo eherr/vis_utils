@@ -28,8 +28,9 @@ from ..scene.scene_object import SceneObject
 from ..scene.components import ComponentBase
 from ..scene.utils import get_random_color
 from anim_utils.motion_editing.motion_editing import MotionEditing, KeyframeConstraint
-from anim_utils.motion_editing import FootplantConstraintGenerator, MotionGrounding
-from anim_utils.motion_editing.utils import guess_ground_height, add_heels_to_skeleton
+from anim_utils.motion_editing import FootplantConstraintGenerator
+from anim_utils.motion_editing.motion_grounding import MotionGrounding, add_heels_to_skeleton
+from anim_utils.motion_editing.footplant_constraint_generator import guess_ground_height
 from anim_utils.animation_data.skeleton_models import STANDARD_MIRROR_MAP, JOINT_CONSTRAINTS
 from anim_utils.animation_data.motion_blending import create_transition_for_joints_using_slerp, BLEND_DIRECTION_FORWARD, BLEND_DIRECTION_BACKWARD, smooth_translation_in_quat_frames
 from anim_utils.motion_editing.cubic_motion_spline import CubicMotionSpline
@@ -89,11 +90,6 @@ def swap_parameters(frame, node_names, mirror_map):
 
 
 def flip_root_coordinate_system(q1):
-    """
-    http://www.gamedev.sk/mirroring-animations
-    http://www.gamedev.net/topic/599824-mirroring-a-quaternion-against-the-yz-plane/
-    """
-
     conv_m = np.array([[-1, 0, 0, 0],
                        [0, 1, 0, 0],
                        [0, 0, -1, 0],
@@ -108,11 +104,6 @@ def flip_root_coordinate_system(q1):
     return q2
 
 def flip_pelvis_coordinate_system(q):
-    """
-    http://www.gamedev.sk/mirroring-animations
-    http://www.gamedev.net/topic/599824-mirroring-a-quaternion-against-the-yz-plane/
-    """
-
     conv_m = np.array([[1, 0, 0, 0],
                        [0, 1, 0, 0],
                        [0, 0, 1, 0],
@@ -127,11 +118,6 @@ def flip_pelvis_coordinate_system(q):
     return q
 
 def flip_custom_coordinate_system_legs(q):
-    """
-    http://www.gamedev.sk/mirroring-animations
-    http://www.gamedev.net/topic/599824-mirroring-a-quaternion-against-the-yz-plane/
-    """
-
     conv_m = np.array([[1, 0, 0, 0],
                        [0, -1, 0, 0],
                        [0, 0, 1, 0],
@@ -154,11 +140,6 @@ def flip_custom_coordinate_system_legs(q):
     return q
 
 def flip_custom_coordinate_system(q):
-    """
-    http://www.gamedev.sk/mirroring-animations
-    http://www.gamedev.net/topic/599824-mirroring-a-quaternion-against-the-yz-plane/
-    """
-
     conv_m = np.array([[1, 0, 0, 0],
                        [0, 1, 0, 0],
                        [0, 0, 1, 0],
@@ -171,11 +152,6 @@ def flip_custom_coordinate_system(q):
     return q
 
 def flip_custom_coordinate_system_upper_arm(q):
-    """
-    http://www.gamedev.sk/mirroring-animations
-    http://www.gamedev.net/topic/599824-mirroring-a-quaternion-against-the-yz-plane/
-    """
-
     conv_m = np.array([[1, 0, 0, 0],
                        [0, 1, 0, 0],
                        [0, 0, 1, 0],
@@ -188,11 +164,6 @@ def flip_custom_coordinate_system_upper_arm(q):
     return q
 
 def flip_custom_coordinate_system_lower_arm(q):
-    """
-    http://www.gamedev.sk/mirroring-animations
-    http://www.gamedev.net/topic/599824-mirroring-a-quaternion-against-the-yz-plane/
-    """
-
     conv_m = np.array([[1, 0, 0, 0],
                        [0, 1, 0, 0],
                        [0, 0, 1, 0],
@@ -206,11 +177,6 @@ def flip_custom_coordinate_system_lower_arm(q):
 
 
 def flip_custom_coordinate_system_hand(q):
-    """
-    http://www.gamedev.sk/mirroring-animations
-    http://www.gamedev.net/topic/599824-mirroring-a-quaternion-against-the-yz-plane/
-    """
-
     conv_m = np.array([[1, 0, 0, 0],
                        [0, 1, 0, 0],
                        [0, 0, 1, 0],
@@ -223,11 +189,6 @@ def flip_custom_coordinate_system_hand(q):
     return q
 
 def flip_custom_coordinate_system_hips(q):
-    """
-    http://www.gamedev.sk/mirroring-animations
-    http://www.gamedev.net/topic/599824-mirroring-a-quaternion-against-the-yz-plane/
-    """
-
     conv_m = np.array([[1, 0, 0, 0],
                        [0, 1, 0, 0],
                        [0, 0, -1, 0],
@@ -244,23 +205,12 @@ def flip_custom_coordinate_system_hips(q):
 
 
 def flip_custom_coordinate_system_shoulders(q):
-    """
-    http://www.gamedev.sk/mirroring-animations
-    http://www.gamedev.net/topic/599824-mirroring-a-quaternion-against-the-yz-plane/
-    """
-
-
     flip_q = quaternion_from_euler(*np.radians([180, 0, 0]))
     q = quaternion_multiply(flip_q, q)
     return q
 
 
 def flip_custom_root_coordinate_system(q):
-    """
-    http://www.gamedev.sk/mirroring-animations
-    http://www.gamedev.net/topic/599824-mirroring-a-quaternion-against-the-yz-plane/
-    """
-
     conv_m = np.array([[1, 0, 0, 0],
                        [0, -1, 0, 0],
                        [0, 0, -1, 0],
