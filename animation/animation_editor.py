@@ -151,42 +151,6 @@ def flip_custom_coordinate_system(q):
     q = quaternion_from_matrix(new_m)
     return q
 
-def flip_custom_coordinate_system_upper_arm(q):
-    conv_m = np.array([[1, 0, 0, 0],
-                       [0, 1, 0, 0],
-                       [0, 0, 1, 0],
-                       [0, 0, 0, 1]])
-
-
-    m = quaternion_matrix(q)
-    new_m = np.dot(conv_m, np.dot(m, conv_m))
-    q = quaternion_from_matrix(new_m)
-    return q
-
-def flip_custom_coordinate_system_lower_arm(q):
-    conv_m = np.array([[1, 0, 0, 0],
-                       [0, 1, 0, 0],
-                       [0, 0, 1, 0],
-                       [0, 0, 0, 1]])
-
-
-    m = quaternion_matrix(q)
-    new_m = np.dot(conv_m, np.dot(m, conv_m))
-    q = quaternion_from_matrix(new_m)
-    return q
-
-
-def flip_custom_coordinate_system_hand(q):
-    conv_m = np.array([[1, 0, 0, 0],
-                       [0, 1, 0, 0],
-                       [0, 0, 1, 0],
-                       [0, 0, 0, 1]])
-
-
-    m = quaternion_matrix(q)
-    new_m = np.dot(conv_m, np.dot(m, conv_m))
-    q = quaternion_from_matrix(new_m)
-    return q
 
 def flip_custom_coordinate_system_hips(q):
     conv_m = np.array([[1, 0, 0, 0],
@@ -247,13 +211,6 @@ def mirror_animation_custom(node_names, frames, mirror_map):
                 q = flip_custom_coordinate_system_legs(q)
             elif "shoulder_jnt" in node_name:
                 q = flip_custom_coordinate_system_shoulders(q)
-            elif "upArm" in node_name:
-                q = flip_custom_coordinate_system_upper_arm(q)
-            elif "lowArm" in node_name:
-                q = flip_custom_coordinate_system_lower_arm(q)
-            elif "hand" in node_name:
-                q = flip_custom_coordinate_system_hand(q)
-
             elif node_name == "Root":
                 q = flip_root_coordinate_system(q)
             else:
