@@ -361,13 +361,31 @@ class AnimationEditorBase(object):
         self.constraints = []
         self.ik_settings = IK_SETTINGS
         self.motion_editing = MotionEditing(self.skeleton, self.ik_settings)
+        
         if skeleton.skeleton_model is not None and "joint_constraints" in skeleton.skeleton_model:
             self.motion_editing.add_constraints_to_skeleton(skeleton.skeleton_model["joint_constraints"])
-
         self.edit_stash = list()
         self.command_history = list()
+        self.foot_joints = []
+        self.set_foot_joints()
 
+    def set_foot_joints(self):
+        self.foot_joints = []
+        if "joints" in self.skeleton.skeleton_model:
+            for j in ["left_ankle", "right_ankle", "left_toe", "right_toe"]:
+                joint_name = self.skeleton.skeleton_model["joints"][j]
+                if joint_name is not None:
+                    self.foot_joints.append(joint_name)
 
+    def guess_ground_height(self, use_feet=True):
+        motion = self.get_motion()
+        skeleton = self.get_skeleton()
+        if use_feet and len(self.foot_joints) > 0:
+            minimum_height = guess_ground_height(skeleton, motion.frames, 0, 5, self.foot_joints)
+        else:
+            minimum_height = motion.frames[0, 1]
+        return minimum_height
+        
     def undo(self):
         frames = None
         if len(self.edit_stash) > 0:
@@ -588,7 +606,7 @@ class AnimationEditorBase(object):
         self.save_state("mirror_animation", None)
         motion = self.get_motion()
         skeleton = self.get_skeleton()
-        if skeleton.skeleton_model is None:
+        if skeleton.skeleton_model is None or "joints" not in skeleton.skeleton_model:
             print("Error: The skeleton has no model")
             return
         standard_mirror_map = STANDARD_MIRROR_MAP
@@ -656,7 +674,6 @@ class AnimationEditorBase(object):
                 q = [q[0], q[1], q[3], -q[2]]
                 motion.frames[idx,o:o+4] = q
                 o+=4
-        return
 
 
 class AnimationEditor(AnimationEditorBase, ComponentBase):
@@ -671,24 +688,6 @@ class AnimationEditor(AnimationEditorBase, ComponentBase):
     def undo_edit(self):
         if self.motion_backup is not None:
             self._animation_controller.replace_current_frames(self.motion_backup)
-
-        
-    def guess_ground_height(self, use_feet=True):
-        motion = self.get_motion()
-        skeleton = self.get_skeleton()
-        if skeleton.skeleton_model is not None:
-            if use_feet:
-                foot_joints = []
-                for j in ["left_ankle", "right_ankle", "left_toe", "right_toe"]:
-                    joint_name = skeleton.skeleton_model["joints"][j]
-                    if joint_name is not None:
-                        foot_joints.append(joint_name)
-                minimum_height = guess_ground_height(skeleton, motion.frames, 0, 5, foot_joints)
-            else:
-                minimum_height = motion.frames[0, 1]
-            return minimum_height
-        else:
-            return 0
 
     def move_to_ground(self, source_ground_height, target_ground_height):
         motion = self.get_motion()
