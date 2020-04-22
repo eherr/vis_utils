@@ -26,9 +26,8 @@ import numpy as np
 from transformations import quaternion_matrix, quaternion_multiply, quaternion_from_euler, euler_from_quaternion, quaternion_from_euler, quaternion_matrix, quaternion_from_matrix, quaternion_multiply
 from ..scene.scene_object import SceneObject
 from ..scene.components import ComponentBase
-from ..scene.utils import get_random_color
 from anim_utils.motion_editing.motion_editing import MotionEditing, KeyframeConstraint
-from anim_utils.motion_editing import FootplantConstraintGenerator
+from anim_utils.motion_editing.footplant_constraint_generator import FootplantConstraintGenerator, SceneInterface
 from anim_utils.motion_editing.motion_grounding import MotionGrounding, add_heels_to_skeleton
 from anim_utils.motion_editing.footplant_constraint_generator import guess_ground_height
 from anim_utils.animation_data.skeleton_models import STANDARD_MIRROR_MAP, JOINT_CONSTRAINTS
@@ -326,7 +325,11 @@ class AnimationEditorBase(object):
         self.foot_joints = []
         self.set_foot_joints()
         self.motion_grounding = MotionGrounding(self.skeleton, self.ik_settings, self.skeleton.skeleton_model, use_analytical_ik=True)
-        self.footplant_settings = {"window": 20, "tolerance": 1, "constraint_range": 10, "smoothing_constraints_window": 15}
+        self.footplant_settings = {"window": 20, "tolerance": 1, "constraint_range": 10, "smoothing_constraints_window": 15, "foot_lift_search_window": 20, "contact_tolerance": 0.1, "foot_lift_tolerance":0.1}
+        if self.motion_grounding.initialized:
+            self.foot_constraint_generator = FootplantConstraintGenerator(self.skeleton, self.skeleton.skeleton_model, self.footplant_settings, None)
+        else:
+            self.foot_constraint_generator = None
 
     def set_foot_joints(self):
         self.foot_joints = []
@@ -657,44 +660,27 @@ class AnimationEditor(AnimationEditorBase, ComponentBase):
 
     def detect_ground_contacts(self, source_ground_height):
         motion = self.get_motion()
-        if "ik_chains" not in self.skeleton.skeleton_model:
+        if self.foot_constraint_generator is not None:
+            ground_contacts = self.foot_constraint_generator.detect_ground_contacts(motion.frames, self.foot_constraint_generator.contact_joints, source_ground_height)
+        else:
+            ground_contacts = [[] for f in range(motion.n_frames)]
+        return ground_contacts
+
+    def apply_foot_constraints(self, ground_contacts, target_ground_height):
+        if self.foot_constraint_generator is None or len(ground_contacts) == 0:
             return
-        constraint_generator = FootplantConstraintGenerator(self.skeleton, self.skeleton.skeleton_model,
-                                                            self.footplant_settings, None, source_ground_height)
-        ground_contacts = constraint_generator.detect_ground_contacts(motion.frames, foot_joints)
-
-        color_map = {j: get_random_color() for j in self.foot_joints}
-        semantic_annotation = dict()
-        for idx in range(motion.n_frames):
-            for label in ground_contacts[idx]:
-                if label not in semantic_annotation:
-                    semantic_annotation[label] = []
-                semantic_annotation[label].append(idx)
-        self._animation_controller.set_color_annotation(semantic_annotation, color_map)
-        # self.init_label_time_line()
-
-    def apply_foot_constraints(self, target_ground_height):
         motion = self.get_motion()
-        if "ik_chains" not in self.skeleton.skeleton_model:
-            return
-        ground_contacts = [[] for f in range(motion.n_frames)]
-        for label in self.foot_joints:
-            if label in self.animation_controller._semantic_annotation:
-                for idx in self.animation_controller._semantic_annotation[label]:
-                    ground_contacts[idx].append(label)
-
-        constraint_generator = FootplantConstraintGenerator(self.skeleton, self.skeleton.skeleton_model,
-                                                            self.footplant_settings, None, target_ground_height)
-        constraints, blend_ranges = foot_constraint_generator.generate(motion, ground_contacts)
+        constraints, blend_ranges = self.foot_constraint_generator.generate(motion, ground_contacts)
         self.motion_grounding.clear()
         root = self.skeleton.root
         for joint_name, frame_ranges in blend_ranges.items():
-            ik_chain = skeleton.skeleton_model["ik_chains"][joint_name]
-            for frame_range in frame_ranges:
-                joint_names = [root] + [ik_chain["root"], ik_chain["joint"], joint_name]
-                self.motion_grounding.add_blend_range(joint_names, tuple(frame_range))
+            if joint_name in self.motion_grounding.ik_chains:
+                ik_chain = self.motion_grounding.ik_chains[joint_name]
+                for frame_range in frame_ranges:
+                    joint_names = [root] + [ik_chain["root"], ik_chain["joint"], joint_name]
+                    self.motion_grounding.add_blend_range(joint_names, tuple(frame_range))
         self.motion_grounding.set_constraints(constraints)
-        self._animation_controller._motion.mv.frames = self.motion_grounding.run(motion, target_ground_height)
+        self._animation_controller._motion.mv.frames = self.motion_grounding.run(motion, SceneInterface(target_ground_height))
 
     def undo(self):
         frames = AnimationEditorBase.undo(self)
