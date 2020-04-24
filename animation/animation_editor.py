@@ -26,7 +26,7 @@ import numpy as np
 from transformations import quaternion_matrix, quaternion_multiply, quaternion_from_euler, euler_from_quaternion, quaternion_from_euler, quaternion_matrix, quaternion_from_matrix, quaternion_multiply
 from ..scene.scene_object import SceneObject
 from ..scene.components import ComponentBase
-from anim_utils.motion_editing.motion_editing import MotionEditing, KeyframeConstraint
+from anim_utils.motion_editing.motion_editing import MotionEditing, KeyframeConstraint, substract_frames, add_reduced_frames
 from anim_utils.motion_editing.footplant_constraint_generator import FootplantConstraintGenerator, SceneInterface
 from anim_utils.motion_editing.motion_grounding import MotionGrounding, add_heels_to_skeleton
 from anim_utils.motion_editing.footplant_constraint_generator import guess_ground_height
@@ -289,7 +289,8 @@ def apply_blending(skeleton, frames, joint_list, joint_index_list, dest_start, d
         if end_window > 0:
             frames = smooth_translation_in_quat_frames(frames, dest_end, end_window)
         for i in range(3):
-            quat_joint_index_list.remove(i)
+            if i in quat_joint_index_list:
+                quat_joint_index_list.remove(i)
     
     if len(quat_joint_index_list) > 0:
         o = 0
@@ -374,21 +375,37 @@ class AnimationEditorBase(object):
     def clear_constraints(self):
         self.constraints = []
 
-    def translate_joint(self, joint_name, offset, frame_range, use_ccd=True, plot=False, apply=True):
+    def translate_joint(self, joint_name, offset, frame_idx, frame_range, blend_window_size, use_ccd=True, plot=False, apply=True):
         self.save_state("translate_joint", (joint_name, offset, frame_range))
         edit_start, edit_end = frame_range
         if joint_name != self.skeleton.root:
             frames = self.motion_vector.frames
-            for frame_idx in range(edit_start, edit_end):
-                p = self.skeleton.nodes[joint_name].get_global_position(frames[frame_idx])
-                p += offset
-                self.add_constraint(frame_idx, joint_name, p)
+            p = self.skeleton.nodes[joint_name].get_global_position(frames[frame_idx])
+            p += offset
             if apply:
-                if use_ccd:
-                    self.apply_constraints_using_ccd(plot)
-                else:
-                    self.apply_constraints(plot)
-            #self._animation_editor.apply_joint_translation_offset(joint_name, [x,y,z], frame_range)
+                frame_constraints = [KeyframeConstraint(frame_idx, joint_name, p)]
+                n_max_iter = 2
+                chain_end_joints = None
+                new_frames = np.array(frames)
+                new_frames[frame_idx] = self.skeleton.reach_target_positions(new_frames[frame_idx], frame_constraints, chain_end_joints, n_max_iter=n_max_iter, verbose=False)
+                # apply delta
+                joint_list = self.motion_editing.get_fk_chain(joint_name, self.skeleton.root)
+
+                delta_frame = substract_frames(self.skeleton, new_frames[frame_idx], frames[frame_idx])
+                reduced_delta_frame = self.motion_editing.get_reduced_frame(delta_frame, joint_list)
+               
+                for f_idx in range(edit_start, edit_end):
+                    if f_idx != frame_idx:
+                        new_frames[f_idx] = add_reduced_frames(self.skeleton, frames[f_idx], reduced_delta_frame, joint_list)
+                # blend in and out
+                joint_index_list = []
+                for joint in joint_list:
+                    offset = self.skeleton.nodes[joint].quaternion_frame_index * 4 + 3
+                    joint_index_list += list(range(offset,offset+4))
+                new_frames = apply_blending(self.skeleton, new_frames, joint_list, joint_index_list, edit_start, edit_end-1, blend_window_size)
+                self.motion_vector.frames = new_frames
+            else:
+                self.add_constraint(frame_idx, joint_name, p)
         else:
             self.translate_frames(offset, frame_range)
 
@@ -453,17 +470,16 @@ class AnimationEditorBase(object):
 
         # sort https://docs.python.org/dev/library/collections.html#ordereddict-examples-and-recipes
         _constraints = collections.OrderedDict(sorted(_constraints.items(), key=lambda t: t[0]))
-        if len(frames) > 1:
-            new_frames = self.motion_editing.edit_motion_using_displacement_map_and_ccd(frames, _constraints, plot=plot_curve)
-        else:
-            frame_idx = 0
+        if len(frames) > 1 and len(_constraints) >0:
+            motion.frames = self.motion_editing.edit_motion_using_displacement_map_and_ccd(frames, _constraints, plot=plot_curve)
+        elif len(_constraints)> 0:
+            frame_idx = list(_constraints.keys())[0]
             frame_constraints = [_constraints[frame_idx][joint_name]]
             n_max_iter = 2
             chain_end_joints = None
             new_frames = np.array(frames)
-            new_frames[0] = self.skeleton.reach_target_positions(new_frames[0], frame_constraints, chain_end_joints, n_max_iter=n_max_iter, verbose=False)
-        #self._animation_controller.replace_current_frames(new_frames)
-        motion.frames = new_frames
+            new_frames[frame_idx] = self.skeleton.reach_target_positions(new_frames[frame_idx], frame_constraints, chain_end_joints, n_max_iter=n_max_iter, verbose=False)
+            motion.frames = new_frames
 
 
     def get_skeleton(self):
