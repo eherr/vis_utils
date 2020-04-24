@@ -63,6 +63,7 @@ class SceneEditWidget(object):
         self.original_position = np.array([0,0,0])
         self.axis_projection_offset = 0
         self.rotation = np.eye(3)
+        self._move_callback = None
 
     def activate_axis(self, axis_id, ray=None):
         
@@ -103,14 +104,8 @@ class SceneEditWidget(object):
     def reset_rotation(self):
         self.rotation = np.eye(3)
         
-
     def draw(self, v, p, l):
         return
-        #if not self.visible or self.scene_object is None:
-        #    return
-        #self.transform[3, :3] = self.scene_object.getPosition()
-
-        #self.visualization.draw(self.transform, v, p)
 
     def handle_keyboard_input(self, key):
         if self.scene_object is not None and self.visible:
@@ -148,4 +143,10 @@ class SceneEditWidget(object):
         if axis is not None:
             t = self.get_distance_along_axis(cam_pos, cam_ray, axis)
             object_pos = self.original_position + axis * (t - self.axis_projection_offset)
-            self.scene_object.setPosition(object_pos)
+            if self._move_callback is None:
+                self.scene_object.setPosition(object_pos)
+            else:
+                self._move_callback(object_pos)
+        
+    def register_move_callback(self, callback):
+        self._move_callback = callback
