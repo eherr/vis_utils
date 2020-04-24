@@ -335,9 +335,10 @@ class AnimationEditorBase(object):
         self.foot_joints = []
         if "joints" in self.skeleton.skeleton_model:
             for j in ["left_ankle", "right_ankle", "left_toe", "right_toe"]:
-                joint_name = self.skeleton.skeleton_model["joints"][j]
-                if joint_name is not None:
-                    self.foot_joints.append(joint_name)
+                if j in self.skeleton.skeleton_model["joints"]:
+                    joint_name = self.skeleton.skeleton_model["joints"][j]
+                    if joint_name is not None:
+                        self.foot_joints.append(joint_name)
 
     def guess_ground_height(self, use_feet=True):
         motion = self.get_motion()
