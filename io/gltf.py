@@ -246,7 +246,7 @@ def extract_skeleton(data, skin_idx):
         #print("bind matrices", node.name, joint["inv_bind_pose"])
         #joint["offset"] = offset#joint["inv_bind_pose"][:3,3]
         #joint["rotation"] = quaternion_from_matrix(np.linalg.inv(joint["inv_bind_pose"]))
-        joint["channels"] = ["Xrotation","Yrotation","Zrotation"]
+        joint["channels"] = ["Xrotation", "Yrotation", "Zrotation"]
         joint["node_type"] = 1
         joints[node.name] = joint
         if len(children) == 0:
@@ -259,6 +259,7 @@ def extract_skeleton(data, skin_idx):
     while parent_map[root_joint] is not None:
         root_joint = parent_map[root_joint]
     joints[root_joint]["node_type"] = 0
+    joints[root_joint]["channels"] = ["Xposition", "Yposition", "ZPosition", "Xrotation", "Yrotation", "Zrotation"]
     #set_pose_from_bind_pose(joints, parent_map)
     skeleton["nodes"] = joints
     skeleton["root"] = root_joint
