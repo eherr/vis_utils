@@ -83,10 +83,10 @@ class LegacySkeletonAnimationController(SkeletonAnimationControllerBase, Animati
     def updateTransformation(self):
         if 0 <= self.currentFrameNumber < self.getNumberOfFrames():
             current_frame = self._motion.frames[self.currentFrameNumber]
-            self._visualization.updateTransformation(current_frame, self.scene_object.scale_matrix)
+            self._visualization.updateTransformation(current_frame, self.scene_object.transformation)
 
     def updateTransformationFromFrame(self, frame):
-        self._visualization.updateTransformation(frame, self.scene_object.scale_matrix)
+        self._visualization.updateTransformation(frame, self.scene_object.transformation)
 
     def resetAnimationTime(self):
         self.currentFrameNumber = 0
@@ -243,12 +243,15 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         return self._visualization.color
 
     def getPosition(self):
+        m = self.scene_object.transformation
         if self._motion is not None:
             root = self._visualization.skeleton.root
             pos = self._visualization.skeleton.nodes[root].offset + self._motion.get_pose()[:3]
-            return np.array(pos) * self.scene_object.get_scale()
+            pos = [pos[0], pos[1], pos[2], 1]
+            pos = np.dot(m, pos)[:3]
+            return np.array(pos)
         else:
-            return [0,0,0]
+            return m[3,:3]
 
     def get_visualization(self):
         return self._visualization
@@ -259,8 +262,6 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
             skeleton = self._visualization.skeleton
             if use_reference_frame:
                 frame = skeleton.get_reduced_reference_frame()
-            if "left_heel" not in skeleton.nodes.keys():
-                self._visualization.skeleton.add_heels(skeleton.skeleton_model)
             o = self.scene_object.scene.object_builder.create_component("ragdoll_from_skeleton", skeleton, frame, figure_def, add_contact_vis=False)
             #o = self.scene_object.scene.object_builder.create_ragdoll_from_skeleton(self._visualization.skeleton, frame)
             self.scene_object.scene.addAnimationController(o, "character_animation_recorder")
