@@ -654,27 +654,6 @@ class AnimationEditorBase(object):
                 motion.frames[idx,o:o+4] = q
                 o+=4
 
-
-class AnimationEditor(AnimationEditorBase, ComponentBase):
-    def __init__(self, scene_object):
-        ComponentBase.__init__(self, scene_object)
-        self._animation_controller = scene_object._components["animation_controller"]
-        skeleton = self._animation_controller._visualization.skeleton
-        if skeleton.skeleton_model is None:
-            skeleton.skeleton_model = dict()
-        AnimationEditorBase.__init__(self, skeleton, self._animation_controller._motion.mv)
-    
-    def undo_edit(self):
-        if self.motion_backup is not None:
-            self._animation_controller.replace_current_frames(self.motion_backup)
-
-    def move_to_ground(self, source_ground_height, target_ground_height):
-        motion = self.get_motion()
-        frames = motion.frames
-        for f in frames:
-            f[1] += target_ground_height - source_ground_height
-        self._animation_controller.replace_current_frames(frames)
-
     def detect_ground_contacts(self, source_ground_height):
         motion = self.get_motion()
         if self.foot_constraint_generator is not None:
@@ -697,7 +676,33 @@ class AnimationEditor(AnimationEditorBase, ComponentBase):
                     joint_names = [root] + [ik_chain["root"], ik_chain["joint"], joint_name]
                     self.motion_grounding.add_blend_range(joint_names, tuple(frame_range))
         self.motion_grounding.set_constraints(constraints)
-        self._animation_controller._motion.mv.frames = self.motion_grounding.run(motion, SceneInterface(target_ground_height))
+        motion.frames = self.motion_grounding.run(motion, SceneInterface(target_ground_height))
+
+
+    def ground_feet(self, soruce_ground_height, target_ground_height):
+        ground_contacts = self.detect_ground_contacts(soruce_ground_height)
+        self.apply_foot_constraints(ground_contacts, target_ground_height)
+
+
+class AnimationEditor(AnimationEditorBase, ComponentBase):
+    def __init__(self, scene_object):
+        ComponentBase.__init__(self, scene_object)
+        self._animation_controller = scene_object._components["animation_controller"]
+        skeleton = self._animation_controller._visualization.skeleton
+        if skeleton.skeleton_model is None:
+            skeleton.skeleton_model = dict()
+        AnimationEditorBase.__init__(self, skeleton, self._animation_controller._motion.mv)
+    
+    def undo_edit(self):
+        if self.motion_backup is not None:
+            self._animation_controller.replace_current_frames(self.motion_backup)
+
+    def move_to_ground(self, source_ground_height, target_ground_height):
+        motion = self.get_motion()
+        frames = motion.frames
+        for f in frames:
+            f[1] += target_ground_height - source_ground_height
+        self._animation_controller.replace_current_frames(frames)
 
     def undo(self):
         frames = AnimationEditorBase.undo(self)
