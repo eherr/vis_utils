@@ -673,7 +673,7 @@ class AnimationEditorBase(object):
             if joint_name in self.motion_grounding.ik_chains:
                 ik_chain = self.motion_grounding.ik_chains[joint_name]
                 for frame_range in frame_ranges:
-                    joint_names = [root] + [ik_chain["root"], ik_chain["joint"], joint_name]
+                    joint_names = [root] + [ik_chain.limb_root, ik_chain.limb_joint, joint_name]
                     self.motion_grounding.add_blend_range(joint_names, tuple(frame_range))
         self.motion_grounding.set_constraints(constraints)
         motion.frames = self.motion_grounding.run(motion, SceneInterface(target_ground_height))
