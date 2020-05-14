@@ -328,7 +328,7 @@ class AnimationEditorBase(object):
         self.motion_grounding = MotionGrounding(self.skeleton, self.ik_settings, self.skeleton.skeleton_model, use_analytical_ik=True)
         self.footplant_settings = {"window": 20, "tolerance": 1, "constraint_range": 10, "smoothing_constraints_window": 15, "foot_lift_search_window": 20, "contact_tolerance": 0.1, "foot_lift_tolerance":0.1}
         if self.motion_grounding.initialized:
-            self.foot_constraint_generator = FootplantConstraintGenerator(self.skeleton, self.skeleton.skeleton_model, self.footplant_settings, None)
+            self.foot_constraint_generator = FootplantConstraintGenerator(self.skeleton, self.footplant_settings, None)
         else:
             self.foot_constraint_generator = None
 
