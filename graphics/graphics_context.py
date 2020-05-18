@@ -36,6 +36,7 @@ from ..graphics.selection_frame_buffer import SelectionFrameBuffer
 from ..graphics.plot_manager import PlotManager
 from ..graphics.camera3d import OrbitingCamera
 
+DEFAULT_SKY_COLOR = [0,0,0]
 
 def getIfromRGB(rgb):
     red = int(rgb[0]*255)
@@ -47,10 +48,10 @@ def getIfromRGB(rgb):
 
 
 class GraphicsContext(object):
-    def __init__(self,  w, h, use_frame_buffer=True, use_shadows=True):
+    def __init__(self,  w, h, use_frame_buffer=True, use_shadows=True, sky_color=DEFAULT_SKY_COLOR):
         self.width = w
         self.height = h
-        self.sky_color = [0,0,0]
+        self.sky_color = sky_color
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_TEXTURE_2D)
         #https://learnopengl.com/Advanced-OpenGL/Blending
@@ -73,7 +74,6 @@ class GraphicsContext(object):
             self.shadow_renderer = ShadowMapRenderer()
         self.main_renderer = MainRenderer(self.sky_color)
         self.show_shadow_map = False
-        self.show_color_renderer = False
 
         self.cs = CoordinateSystemObject(0.1)
         self.camera = OrbitingCamera()
@@ -132,35 +132,19 @@ class GraphicsContext(object):
             if self.use_frame_buffer:
                 self.selection_buffer.prepare_buffer()
                 self.selection_renderer.render_scene(scene, self.camera)
-                self.frame_buffer.prepare_buffer()
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) #we're not using the stencil buffer now
-
+                self.frame_buffer.prepare_buffer()#
+            glClearColor(self.sky_color[0]*255, self.sky_color[1]*255, self.sky_color[1]*255, 255)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+           
+            self.main_renderer.render_scene(object_list, p_m, v_m, light_sources)
             #draw local coordinate system of orbiting camera
-            if self.show_color_renderer:
-                self.color_picking_renderer.render_scene(object_list, p_m, v_m, scene.scene_edit_widget)
-            else:
-                self.main_renderer.render_scene(object_list, p_m, v_m, light_sources)
-
             self.cs.draw(self.camera.get_pivot_matrix(), p_m, light_sources)
-            scene.draw(v_m, p_m)
-
-            if draw_debug:
-                scene.drawDebugVisualization(v_m, p_m)
+            self.render_legacy(scene, v_m, p_m, draw_debug)
 
             if self.use_frame_buffer:
                 self.frame_buffer.bind()
                 self.selection_buffer.draw_buffer_to_screen()
-                if scene.scene_edit_widget.visible:
-                    self.main_renderer.prepare(v_m, p_m, light_sources)
-                    for key in scene.scene_edit_widget.meshes:
-                        geometry = scene.scene_edit_widget.meshes[key]
-                        if key == scene.scene_edit_widget.active_axis:
-                            mat = scene.scene_edit_widget.selection_material
-                        else:
-                            mat = geometry.material
-                        self.main_renderer.render(scene.scene_edit_widget.transform, geometry, mat)
-                    glUseProgram(0)
-
+                self.render_edit_widget(scene.scene_edit_widget, v_m, p_m, light_sources)
                 if self.draw_plot:
                     self.plot_manager.draw(self.camera.get_orthographic_matrix())
 
@@ -168,6 +152,22 @@ class GraphicsContext(object):
                 self.color_picking_renderer.render_scene(object_list,  p_m, v_m, scene.scene_edit_widget)
                 self.frame_buffer.draw_buffer_to_screen()
 
+    def render_edit_widget(self, edit_widget, v_m, p_m, light_sources):
+        if edit_widget.visible:
+            self.main_renderer.prepare(v_m, p_m, light_sources)
+            for key in edit_widget.meshes:
+                geometry = edit_widget.meshes[key]
+                if key == edit_widget.active_axis:
+                    mat = edit_widget.selection_material
+                else:
+                    mat = geometry.material
+                self.main_renderer.render(edit_widget.transform, geometry, mat)
+            glUseProgram(0)
+
+    def render_legacy(self, scene, v_m, p_m, draw_debug):
+        scene.draw(v_m, p_m)
+        if draw_debug:
+            scene.drawDebugVisualization(v_m, p_m)
     def get_id_from_color_buffer(self, x,y):
         """https://www.opengl.org/discussion_boards/showthread.php/178310-glReadPixels
          https://www.khronos.org/opengl/wiki/Common_Mistakes#Texture_upload_and_pixel_reads"""
