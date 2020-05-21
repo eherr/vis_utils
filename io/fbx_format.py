@@ -23,10 +23,10 @@
 import os
 from PIL import Image
 try:
-    from . import geom_io
+    from . import fbx_importer
 except:
     print("Info: Disable FBX due to missing library")
-    geom_io = None
+    fbx_importer = None
 
 
 def load_textures(model_data):
@@ -49,9 +49,9 @@ def load_textures(model_data):
 
 
 def load_model_from_fbx_file(filename):
-    if geom_io is None:
+    if fbx_importer is None:
         return None
-    model_data = geom_io.load_fbx_file(str.encode(filename))
+    model_data = fbx_importer.load_fbx_file(str.encode(filename))
     if model_data is None:
         return
     print(" model", model_data.keys())
