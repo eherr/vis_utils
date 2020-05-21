@@ -29,7 +29,11 @@ from vis_utils.graphics.geometry.mesh import Mesh
 from .utils import load_json_file, save_json_file, load_latest_json_file
 from .obj_format import load_mesh_from_ob_file, load_materials_from_mtl_file, load_obj_file
 from .fbx_format import load_model_from_fbx_file
-from .gltf import load_model_from_gltf_file
+try:
+    from .gltf import load_model_from_gltf_file
+except:
+    print("Info: failed to import gltf library")
+    pass
 
 
 def load_collada_file(builder, file_path):
