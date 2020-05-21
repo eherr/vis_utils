@@ -43,16 +43,29 @@ def main(bvh_file):
     c_pose["zoom"] = -500
     c_pose["position"] = [0, 0, -50]
     c_pose["angles"] = (45, 200)
-    a = GLUTApp(800, 600, title="bvh player",console_scale=0.4, camera_pose=c_pose)
-    o = a.scene.object_builder.create_object_from_file("bvh", bvh_file)
+    app = GLUTApp(800, 600, title="bvh player",console_scale=0.4, camera_pose=c_pose)
+    o = app.scene.object_builder.create_object_from_file("bvh", bvh_file)
     c = o._components["animation_controller"]
-    a.keyboard_handler["control"] = (control_func, (a, c))
-    a.scene.draw_task_manager.add("print", Task("print", print_global_vars, a))
-    a.run()
+    app.keyboard_handler["control"] = (control_func, (app, c))
+    
+    app.scene.draw_task_manager.add("print", Task("print", print_global_vars, app))
+    app.run()
 main("example.bvh")
 
 
 ```
+
+The library also supports the import of character meshes and skeletons from glb and fbx files. To enable the fbx support a custom [FBX SDK Wrapper](https://github.com/eherr/py_fbx_wrapper) has to be build and copied into the directory "vis_utils/io".
+
+
+```python   
+
+    app.scene.object_builder.create_object_from_file("glb", glb_file)
+    app.scene.object_builder.create_object_from_file("fbx", fbx_file)
+
+```
+
+
 ## Developer
 
 Erik Herrmann (erik.herrmann at dfki.de)
