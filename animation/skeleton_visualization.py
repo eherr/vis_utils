@@ -116,9 +116,9 @@ class SkeletonVisualization(ComponentBase):
             self.drawCoordinateSystem(viewMatrix, projectionMatrix, idx)
 
     def drawBoneShape(self, viewMatrix, projectionMatrix, lightSources, idx, j):
+        m = self.scene_object.transformation
         if self.matrices[idx] is None:
             return
-        m = self.matrices[idx].T
         for shape in self.shapes[j]:
             shape.draw(m, viewMatrix, projectionMatrix, lightSources)
 

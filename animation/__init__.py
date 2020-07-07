@@ -69,6 +69,8 @@ def create_skeleton_object(builder, skeleton, color):
 
 def load_skeleton_from_json(builder, file_path, scale=1.0):
     data = load_json_file(file_path)
+    if "skeleton" in data:
+        data = data["skeleton"]
     #skeleton = SkeletonBuilder().load_from_custom_unity_format(data)
     skeleton = SkeletonBuilder().load_from_json_data(data)
     skeleton.scale(scale)
@@ -112,10 +114,10 @@ def create_clip_from_reference_frame(skeleton):
 def get_n_frames(anim):
     n_frames = 0
     for k in anim:
-        for c in anim[k]:
-            _n_frames = len(anim[k][c])
-            if _n_frames > n_frames:
-                n_frames = _n_frames
+        print(anim[k])
+        _n_frames = len(anim[k])
+        if _n_frames > n_frames:
+            n_frames = _n_frames
     return n_frames
 
 
@@ -130,12 +132,6 @@ def create_clip_from_animation(skeleton, anim):
     n_dims = 3+n_joints*4
     frames = np.zeros((n_frames, n_dims))
     offset = 3
-    print(anim.keys(), skeleton.animated_joints)
-    print("found the following animations")
-    for j in anim:
-        for c in anim[j]:
-            print(j, c, n_frames)
-    print()
     for joint_name in skeleton.animated_joints:
         if joint_name in anim and "rotation" in anim[joint_name]:
             a_func = anim[joint_name]["rotation"]
@@ -192,10 +188,16 @@ def create_animated_mesh(builder, name, model_data, scale=1, visualize=True):
         #vis.box_scale = 0.1
     
     animation_controller = SkeletonAnimationController(scene_object)
+    anim_key = None
     if "animations" in model_data and len(model_data["animations"])>0:
-        clip = create_clip_from_animation(skeleton,  model_data["animations"])
+        for k in model_data["animations"]:
+            if len(model_data["animations"][k]["curves"].keys()) > 0:
+                anim_key = k
+                break
+        anim = model_data["animations"][anim_key]["curves"]
+        clip = create_clip_from_animation(skeleton, anim)
         clip.scale_root(scale)
-    else:
+    if anim_key is None:
         clip = create_clip_from_reference_frame(skeleton)
         clip.scale_root(scale)
     animation_controller.name = scene_object.name
