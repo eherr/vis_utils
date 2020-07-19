@@ -59,7 +59,8 @@ FOOTPLANT_SETTINGS = {"window": 20,
                       "smoothing_constraints_window": 15,
                       "foot_lift_search_window": 20,
                       "contact_tolerance": 0.1,
-                      "foot_lift_tolerance":0.1}
+                      "foot_lift_tolerance":0.1,
+                      "velocity_tolerance":0.001}
 
 def flip_coordinate_system(q):
     """
