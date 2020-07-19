@@ -53,6 +53,13 @@ IK_SETTINGS = {
         "constrain_place_orientation": False,
         "activate_blending": True
     }
+FOOTPLANT_SETTINGS = {"window": 20,
+                      "tolerance": 1,
+                      "constraint_range": 10,
+                      "smoothing_constraints_window": 15,
+                      "foot_lift_search_window": 20,
+                      "contact_tolerance": 0.1,
+                      "foot_lift_tolerance":0.1}
 
 def flip_coordinate_system(q):
     """
@@ -311,12 +318,13 @@ def apply_blending(skeleton, frames, joint_list, joint_index_list, dest_start, d
 class AnimationEditorBase(object):
     """ class for interactive definition of a set of ik constraints and wrapper for other animation editing functions
     """
-    def __init__(self, skeleton, motion_vector):
+    def __init__(self, skeleton, motion_vector, ik_settings=IK_SETTINGS, footplant_settings=FOOTPLANT_SETTINGS):
         self.skeleton = skeleton
         self.motion_vector = motion_vector
         self.motion_backup = None
         self.constraints = []
-        self.ik_settings = IK_SETTINGS
+        self.ik_settings = ik_settings
+        self.footplant_settings = footplant_settings
         self.motion_editing = MotionEditing(self.skeleton, self.ik_settings)
         
         if skeleton.skeleton_model is not None and "joint_constraints" in skeleton.skeleton_model:
@@ -326,7 +334,6 @@ class AnimationEditorBase(object):
         self.foot_joints = []
         self.set_foot_joints()
         self.motion_grounding = MotionGrounding(self.skeleton, self.ik_settings, self.skeleton.skeleton_model, use_analytical_ik=True)
-        self.footplant_settings = {"window": 20, "tolerance": 1, "constraint_range": 10, "smoothing_constraints_window": 15, "foot_lift_search_window": 20, "contact_tolerance": 0.1, "foot_lift_tolerance":0.1}
         if self.motion_grounding.initialized:
             self.foot_constraint_generator = FootplantConstraintGenerator(self.skeleton, self.footplant_settings, None)
         else:
@@ -416,14 +423,14 @@ class AnimationEditorBase(object):
         else:
             self.rotate_frames(offset, frame_range)
 
-    def fix_joint(self, joint_name, position, frame_range, apply=True):
+    def fix_joint(self, joint_name, position, frame_range, transition_window=None, apply=True):
         self.save_state("fix_joint",(joint_name, position, frame_range))
         edit_start, edit_end = frame_range
         #self._animation_editor.clear_constraints()
         for frame_idx in range(edit_start, edit_end):
             self.add_constraint(frame_idx, joint_name, position)
         if apply:
-            self.apply_constraints_using_ccd()
+            self.apply_constraints_using_ccd(transition_window)
 
     def apply_constraints(self, plot_curve=False):
         motion = self.get_motion()
@@ -450,7 +457,7 @@ class AnimationEditorBase(object):
         #self._animation_controller.replace_current_frames(new_frames)
         motion.frames = new_frames
 
-    def apply_constraints_using_ccd(self, plot_curve=False):
+    def apply_constraints_using_ccd(self, transition_window=None, plot_curve=False):
         motion = self.get_motion()
         frames = motion.frames
         self.motion_backup = np.array(frames[:])
@@ -471,7 +478,7 @@ class AnimationEditorBase(object):
         # sort https://docs.python.org/dev/library/collections.html#ordereddict-examples-and-recipes
         _constraints = collections.OrderedDict(sorted(_constraints.items(), key=lambda t: t[0]))
         if len(frames) > 1 and len(_constraints) >0:
-            motion.frames = self.motion_editing.edit_motion_using_displacement_map_and_ccd(frames, _constraints, plot=plot_curve)
+            motion.frames = self.motion_editing.edit_motion_using_displacement_map_and_ccd(frames, _constraints, transition_window=transition_window, plot=plot_curve)
         elif len(_constraints)> 0:
             frame_idx = list(_constraints.keys())[0]
             frame_constraints = [_constraints[frame_idx][joint_name]]
