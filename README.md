@@ -1,4 +1,4 @@
-# Visualization Utilities
+# Skeleton Animation Visualization Utilities
 
 Simple scene graph and OpenGL 3.3 renderer for data structures from [anim_utils](https://github.com/eherr/anim_utils.git)  
 The code was developed as a side project for debugging purposes based on the following sources:  
