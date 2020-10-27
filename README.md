@@ -14,13 +14,17 @@ https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopengl
 
 The library also supports the import of character meshes and skeletons from glb and fbx files. To enable the fbx support a custom [FBX SDK Wrapper](https://github.com/eherr/py_fbx_wrapper) has to be build and copied into the directory "vis_utils/io".
 
+## Installation
 
-```python   
+Clone the repository and install the package with editable flag.
 
-    app.scene.object_builder.create_object_from_file("glb", glb_file)
-    app.scene.object_builder.create_object_from_file("fbx", fbx_file)
-
+```bat
+pip install -e .
 ```
+
+## Example 
+
+A bvh viewer script can be found in the example directory.
 
 
 ## Developer
