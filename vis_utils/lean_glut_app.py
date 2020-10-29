@@ -28,6 +28,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 import imgui
+from imgui.integrations.opengl import ProgrammablePipelineRenderer
 from .scene.editor_scene import EditorScene
 from .graphics.camera3d import OrbitingCamera
 from .graphics.shaders import ShaderManager

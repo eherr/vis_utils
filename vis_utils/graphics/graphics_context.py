@@ -23,6 +23,8 @@
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import gluUnProject
+import imgui
+from imgui.integrations.opengl import ProgrammablePipelineRenderer
 from ..graphics.geometry.primitive_manager import PrimitiveManager
 from ..graphics.shaders import ShaderManager
 from ..scene.legacy import CoordinateSystemObject
