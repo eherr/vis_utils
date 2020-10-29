@@ -21,18 +21,19 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 import numpy as np
+import imgui
 from .renderer.text_renderer import TextRenderer
 
-
 class Console(object):
-    def __init__(self, top_left, scale=1.0, z=-10):
-        self.text_renderer = TextRenderer()
+    def __init__(self, top_left, scale=1.0, z=-10, alpha=255):
+        self.text_renderer = TextRenderer(alpha)
 
         self.top_left = np.array(top_left)
         self.min_pos = np.array(self.top_left[:])
         self.scale = scale
         self.z = z
         self.lines = []
+        self.max_line_length = 50
 
     def reset(self):
         self.min_pos = np.array(self.top_left[:])
@@ -49,7 +50,39 @@ class Console(object):
             self.min_pos[1] = iy
 
     def set_lines(self, lines):
-        self.lines = lines
+        self.lines = [line[:self.max_line_length] for line in lines]
+
+    def add_line(self, line):
+        self.lines.append(line[:self.max_line_length])
+
+
+class IMGUIConsole(object):
+    def __init__(self, top_left, scale=0.5, z=-10, alpha=255):
+        self.top_left = top_left
+        self.scale = scale
+        self.z = z
+        self.lines = []
+        self.title = "console"
+
+    def reset(self):
+        return
+
+    def render_lines(self, lines):
+        imgui.set_next_window_position(self.top_left[0],self.top_left[1])
+        imgui.begin(self.title, True)
+        for line in lines:
+           imgui.text(line)
+        imgui.end()
+
+    def render_lines(self):
+        imgui.set_next_window_position(self.top_left[0],self.top_left[1])
+        imgui.begin(self.title,True)
+        for line in self.lines:
+           imgui.text(line)
+        imgui.end()
+
+    def set_lines(self, lines):
+        self.lines = [line for line in lines]
 
     def add_line(self, line):
         self.lines.append(line)
