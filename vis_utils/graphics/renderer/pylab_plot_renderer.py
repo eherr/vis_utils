@@ -28,6 +28,7 @@ import matplotlib.backends.backend_agg as agg
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
+import imgui
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from .techniques import Technique, ColorTechnique
@@ -36,11 +37,20 @@ from OpenGL.arrays import vbo
 
 
 class PylabPlotter(object):
-    def __init__(self, size, dpi=100, font_size=5):
+    def __init__(self, title, size, dpi=400, font_size=5):
+        self.title = title
         self.size = size
+        self.dpi = dpi
         self.fig = plt.figure(figsize=(size[0],size[1]), dpi=dpi)# 100 dots per inch, so the resulting buffer is 400x400 pixels
         self.canvas = agg.FigureCanvasAgg(self.fig)
         self.font_size = font_size
+
+
+    def set_size(self, size):
+        self.size = size
+        self.fig = plt.figure(figsize=(size[0], size[1]),
+                                dpi=self.dpi)  # 100 dots per inch, so the resulting buffer is 400x400 pixels
+        self.canvas = agg.FigureCanvasAgg(self.fig)
 
     def clear_data(self):
         pass
@@ -62,8 +72,8 @@ class PylabPlotter(object):
 
 
 class LinePylabPlotter(PylabPlotter):
-    def __init__(self, size, color=(0,1,0), data_length=100000, dpi=100, font_size=5):
-        super().__init__(size, dpi, font_size)
+    def __init__(self, title, size, color=(0,1,0), data_length=100000, dpi=400, font_size=8):
+        super().__init__(title, size, dpi, font_size)
         self.data_length = data_length
         self.color = color
         self.data = dict()
@@ -87,10 +97,17 @@ class LinePylabPlotter(PylabPlotter):
         ax = self.fig.gca()
         ax.clear()
         for key in self.data:
-            plt.yticks(fontsize=self.font_size)
+            #ax.set_xticklabels(ax.get_xticklabels(), font_dict)
+            #ax.set_yticklabels(ax.get_yticklabels(), font_dict)
+            for label in ax.get_yticklabels():
+                label.set_fontsize(self.font_size) 
+            for label in ax.get_xticklabels():
+                label.set_fontsize(self.font_size) 
             ax.plot(self.data[key][-self.data_length:], c=self.colors[key])
+            #plt.yticks(fontsize=self.font_size)
+            #plt.xticks(fontsize=self.font_size)
 
-            ax.get_xaxis().set_visible(False)
+            ax.get_xaxis().set_visible(True)
             self.canvas.draw()
 
     def save_to_file(self, filename):
@@ -114,8 +131,8 @@ class LinePylabPlotter(PylabPlotter):
 
 
 class IMGPylabPlotter(PylabPlotter):
-    def __init__(self, size, dpi=100, font_size=5):
-        super().__init__(size, dpi, font_size)
+    def __init__(self, title, size, dpi=100, font_size=5):
+        super().__init__(title, size, dpi, font_size)
         self.data = None
         self.cb = None
 
@@ -240,13 +257,17 @@ class PlotterTechnique(Technique):
         glUseProgram(self.shader)
         return self.update_texture()
 
+    def set_size(self, size):
+        self.plotter.set_size(size)
+
     def get_size(self):
         return np.array(self.plotter.get_size())
 
-    def update_texture(self):
+    def update_texture(self, bind=True):
         image = self.plotter.get_image()
         size = self.plotter.get_size()
-        glActiveTexture(GL_TEXTURE0)
+        if bind:
+            glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.texture_id)
         n_dims = size[0]*size[1]
         #img_dta = list(struct.unpack(str(n_dims)+"i", image))
@@ -257,7 +278,8 @@ class PlotterTechnique(Technique):
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
-        glUniform1i(self.tex_loc, 0)
+        if bind:
+            glUniform1i(self.tex_loc, 0)
 
     def stop(self):
         glUseProgram(0)
@@ -280,13 +302,18 @@ class PlotterTechnique(Technique):
 
 
 class PlotRenderer(object):
-    def __init__(self):
+    def __init__(self, title):
+        self.title = title
         self.technique = None
         self.vertex_array_type = GL_QUADS
         vertices = []
         self._vbo = vbo.VBO(np.array(vertices,'f'))
         self.n_vertices = len(vertices)
         self.scale = 1
+        self.is_drawn = False
+
+    def set_size(self,size):
+        self.technique.set_size(size)
 
     def clear_canvas(self):
         self.technique.plotter.clear_canvas()
@@ -296,6 +323,7 @@ class PlotRenderer(object):
 
     def plot_data(self):
         self.technique.plotter.plot_data()
+        self.technique.update_texture(False)
 
     def save_to_file(self, filename):
         self.technique.plotter.save_to_file(filename)
@@ -318,11 +346,27 @@ class PlotRenderer(object):
         self.technique.stop()
         return max_pos
 
+    def render_imgui(self):
+        imgui.begin(self.title,True)
+        size = self.technique.get_size()
+        if self.is_drawn and imgui.is_mouse_clicked() and False:
+            new_size = imgui.get_window_size()
+            if new_size[0] != size[0] or new_size[1] != size[1]:
+                size = new_size
+                self.set_size((size[0], size[1]))
+                #print("sets",self.technique.get_size(), (size[0], size[1]))
+        size = self.technique.get_size()
+        if self.is_drawn:
+            size = imgui.get_window_size()
+        imgui.image(self.technique.texture_id, size[0], size[1])
+        imgui.end()
+        self.is_drawn = True
+
 
 class LinePlotRenderer(PlotRenderer):
-    def __init__(self, size):
-        super().__init__()
-        self.technique = PlotterTechnique(LinePylabPlotter(size))
+    def __init__(self, title, size, font_size=5):
+        super().__init__(title)
+        self.technique = PlotterTechnique(LinePylabPlotter(title, size, font_size=font_size))
 
     def add_line(self, key, color):
         self.technique.plotter.add_line(key, color)
@@ -335,9 +379,9 @@ class LinePlotRenderer(PlotRenderer):
 
 
 class ImgPlotRenderer(PlotRenderer):
-    def __init__(self, size):
-        super().__init__()
-        self.technique = PlotterTechnique(IMGPylabPlotter(size))
+    def __init__(self, title, size):
+        super().__init__(title)
+        self.technique = PlotterTechnique(IMGPylabPlotter(title, size))
 
     def set_data(self, data):
         self.technique.plotter.set_data(data)
@@ -348,7 +392,7 @@ class ImgPlotRenderer(PlotRenderer):
 
 class AnnotationRenderer(PlotRenderer):
     def __init__(self, name, size):
-        super().__init__()
+        super().__init__(name)
         self.technique = PlotterTechnique(AnnotationPylabPlotter(name, size))
 
     def set_annotation_data(self, data, cmap):

@@ -26,10 +26,11 @@ from .renderer.pylab_plot_renderer import LinePlotRenderer, ImgPlotRenderer, Ann
 
 
 class PlotManager(object):
-    def __init__(self, width, height, dpi=100, padding=5):
+    def __init__(self, width, height, dpi=100, padding=5, font_size=5):
         self.min_pos = [0,0]
         self.z = -5
         self.scale = 1
+        self.font_size = font_size
         self.plots = collections.OrderedDict()
         self.size = dict()
         self.pos = dict()
@@ -41,18 +42,14 @@ class PlotManager(object):
         self.tick = None
 
     def add_plot(self, name, size, pos=None):
-        self.plots[name] = LinePlotRenderer(size)
+        self.plots[name] = LinePlotRenderer(name, size, font_size=self.font_size)
         self.size[name] = size
         self.pos[name] = pos
-        #self.positions[name] = [self.width-size[0]*self.dpi, self.min_pos[1]]
-        #self.min_pos[1] += size[1] * self.dpi + self.padding
 
     def add_img_plot(self, name, size, pos=None):
-        self.plots[name] = ImgPlotRenderer(size)
+        self.plots[name] = ImgPlotRenderer(name, size)
         self.size[name] = size
         self.pos[name] = pos
-        #self.positions[name] = [self.width-size[0]*self.dpi, self.min_pos[1]]
-        #self.min_pos[1] += size[1] * self.dpi + self.padding
 
     def add_annotation(self, name, size, anim_time, pos=None):
         self.plots[name] = AnnotationRenderer(name, np.array(size))
@@ -83,6 +80,10 @@ class PlotManager(object):
             min_pos[1] += self.size[key][1] * self.dpi + self.padding
         if self.tick is not None:
             self.tick.draw(orthographic_matrix)
+    
+    def render_imgui(self):
+        for key in self.plots:
+            self.plots[key].render_imgui()
 
     def update_data(self, plot_name, key, p):
         if plot_name in self.plots:
