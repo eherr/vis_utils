@@ -35,6 +35,7 @@ from ..graphics.renderer.selection_renderer import SelectionRenderer
 from ..graphics.selection_frame_buffer import SelectionFrameBuffer
 from ..graphics.plot_manager import PlotManager
 from ..graphics.camera3d import OrbitingCamera
+from ..graphics.console import IMGUIConsole
 
 DEFAULT_SKY_COLOR = [0,0,0]
 
@@ -51,6 +52,10 @@ class GraphicsContext(object):
     def __init__(self,  w, h, use_frame_buffer=True, use_shadows=True, sky_color=DEFAULT_SKY_COLOR):
         self.width = w
         self.height = h
+        imgui.create_context()
+        self.imgui_renderer = ProgrammablePipelineRenderer()
+        self.io = imgui.get_io()
+        self.io.display_size = (w, h)
         self.sky_color = sky_color
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_TEXTURE_2D)
@@ -79,6 +84,8 @@ class GraphicsContext(object):
         self.camera = OrbitingCamera()
         self.draw_plot = False
         self.plot_manager = PlotManager(self.width, self.height)
+        self.console = IMGUIConsole([0, 0], alpha=20)
+        self.show_console = False
 
         print("init opengl")
 
@@ -92,6 +99,7 @@ class GraphicsContext(object):
         print("resize", w, h)
         self.width = w
         self.height = h
+        self.io.display_size = (w, h)
         glViewport(0, 0, w, h)
         self.aspect = float(w)/float(h)
         self.camera.set_projection_matrix(45.0, self.aspect, 0.1, 10000.0)
@@ -248,3 +256,16 @@ class GraphicsContext(object):
 
     def reset_camera(self):
         self.camera.reset()
+
+    def draw_imgui(self):
+        io = self.io
+        # start new frame context
+        imgui.new_frame()
+        if self.draw_plot:
+            self.plot_manager.render_imgui()
+        if self.show_console:
+            self.console.render_lines()
+
+        imgui.render()
+        data = imgui.get_draw_data()
+        self.imgui_renderer.rend

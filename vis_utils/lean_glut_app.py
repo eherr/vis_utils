@@ -27,11 +27,12 @@ import threading
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
+import imgui
 from .scene.editor_scene import EditorScene
 from .graphics.camera3d import OrbitingCamera
 from .graphics.shaders import ShaderManager
 from .graphics.geometry.primitive_manager import PrimitiveManager
-from .graphics.console import Console
+from .graphics.console import IMGUIConsole
 from .graphics.renderer.main_renderer import MainRenderer
 from .graphics.plot_manager import PlotManager
 from .glut_app import DEFAULT_CLEAR_COLOR, CameraController
@@ -60,12 +61,14 @@ class LeanGLUTApp(object):
         glutKeyboardFunc(self.keyboard)
         glutMouseFunc(self.mouse)
         glutMotionFunc(self.mouse_motion)
+        glutPassiveMotionFunc(self.passive_mouse_motion)
         glutMouseWheelFunc(self.mouse_wheel)
         glutKeyboardFunc(self.keyboard)
         self.shader_manager = ShaderManager()
         self.shader_manager.initShaderMap()
         self.primitive_manager = PrimitiveManager()
-        self.console = Console([0, 0], scale=console_scale)
+        self.console = IMGUIConsole([0, 0], scale=console_scale)
+        self.show_console = True
         if sim_settings is None:
             sim_settings = dict()
         self.sim_settings = sim_settings
@@ -93,6 +96,10 @@ class LeanGLUTApp(object):
         self.draw_plot = True
         self.fixed_dt = True
         self.clear_color = clear_color
+        imgui.create_context()
+        self.imgui_renderer = ProgrammablePipelineRenderer()
+        self.io = imgui.get_io()
+        self.io.display_size = width, height
         self.reshape(width, height)
 
     def update(self):
@@ -133,15 +140,14 @@ class LeanGLUTApp(object):
         object_list = self.scene.get_visible_objects(self.camera)
         light_sources = self.scene.lightSources
         self.main_renderer.render_scene(object_list, p_m, v_m, light_sources)
-
-        if self.draw_plot:
-            self.plot_manager.draw(self.camera.get_orthographic_matrix())
+        self.draw_ui()
         glutSwapBuffers()
         glutPostRedisplay()
 
     def reshape(self, w, h):
         self.width = w
         self.height = max(h,1)
+        self.io.display_size = (w, h)
         glViewport(0, 0, self.width, self.height)
         self.aspect = float(self.width) / float(self.height)
         self.camera.set_projection_matrix(45.0, self.aspect, 0.1, 100000.0)
@@ -163,6 +169,8 @@ class LeanGLUTApp(object):
         self.camera_controller.last_pos = np.array([x,y])
         self.camera_controller.mode = button
         self.last_click_position = self.get_position_from_click(x,y)
+        io = self.io
+        io.mouse_down[button] = 1-state
 
     def get_position_from_click(self, x, y):
         viewport = glGetIntegerv(GL_VIEWPORT)
@@ -181,10 +189,35 @@ class LeanGLUTApp(object):
             self.camera_controller.rotate(delta)
         elif self.camera_controller.mode == GLUT_MIDDLE_BUTTON:
             self.camera_controller.move(delta)
+        self.io.mouse_pos = (x,y)
 
+    def passive_mouse_motion(self, x, y):
+        self.io.mouse_pos = (x,y)
+    
     def mouse_wheel(self,  wheel, direction, x, y):
         self.camera_controller.zoom(direction)
 
     def set_camera_target(self, scene_object):
         self.camera.setTarget(scene_object)
+    
+    def set_console_lines(self, lines):
+        self.console.set_lines(lines)
+
+    def draw_ui(self):
+        io = self.io
+        # start new frame context
+        imgui.new_frame()
+        #imgui.begin("Console", True)
+        #imgui.text("Hello world!")
+        #imgui.end()
+        if self.draw_plot:
+            #self.plot_manager.draw(self.camera.get_orthographic_matrix())
+            self.plot_manager.render_imgui()
+        if self.show_console:
+            self.console.render_lines()
+
+        imgui.render()
+        data = imgui.get_draw_data()
+        self.imgui_renderer.render(data)
+        imgui.end_frame()
 

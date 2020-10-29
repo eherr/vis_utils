@@ -25,7 +25,7 @@ import imgui
 from .renderer.text_renderer import TextRenderer
 
 class Console(object):
-    def __init__(self, top_left, scale=1.0, z=-10, alpha=255):
+    def __init__(self, top_left, scale=1.0, z=-10, alpha=255, max_line_length=1000):
         self.text_renderer = TextRenderer(alpha)
 
         self.top_left = np.array(top_left)
@@ -33,7 +33,7 @@ class Console(object):
         self.scale = scale
         self.z = z
         self.lines = []
-        self.max_line_length = 50
+        self.max_line_length = max_line_length
 
     def reset(self):
         self.min_pos = np.array(self.top_left[:])

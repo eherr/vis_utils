@@ -31,7 +31,6 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from .scene.editor_scene import EditorScene
 from .graphics.graphics_context import GraphicsContext
-from .graphics.console import Console
 from . import constants
 if constants.activate_simulation:
     from physics_utils.sim import SimWorld
@@ -133,6 +132,7 @@ class GLUTApp(object):
 
         glutMouseFunc(self.mouse_click)
         glutMotionFunc(self.mouse_motion)
+        glutPassiveMotionFunc(self.passive_mouse_motion)
         glutMouseWheelFunc(self.mouse_wheel)
         glClearColor(0.0, 0.0, 0.0, 1.0)
         self.keyboard_handler = dict()
@@ -183,7 +183,6 @@ class GLUTApp(object):
 
     def render(self):
         self.graphics_context.render(self.scene)
-        self.console.draw_lines(self.graphics_context.camera.get_orthographic_matrix())
         glutSwapBuffers()
         glutPostRedisplay()
 
@@ -226,10 +225,15 @@ class GLUTApp(object):
         return self.graphics_context.frame_buffer.to_image()
 
     def set_console_lines(self, lines):
-        self.console.set_lines(lines)
+        self.graphics_context.console.set_lines(lines)
+
+    def get_sim_steps_per_update(self):
+        return np.floor(self.interval/self.sim_dt)
 
     def mouse_click(self, button, state, x, y):
         self.camera_controller.mouse(button, state, x, y)
+        io = self.graphics_context.io
+        io.mouse_down[button] = 1-state
         if not self.enable_object_selection:
             return
         if button == LEFT_MOUSE_BUTTON:
@@ -249,6 +253,11 @@ class GLUTApp(object):
         if self.enable_object_selection:
             cam_pos, cam_ray = self.graphics_context.get_ray_from_click(x, y)
             self.scene.handle_mouse_movement(cam_pos[:3], cam_ray[:3])
+   
+        self.graphics_context.io.mouse_pos = (x,y)
+
+    def passive_mouse_motion(self, x, y):
+        self.graphics_context.io.mouse_pos = (x,y)
 
     def mouse_wheel(self, wheel, direction, x, y):
         self.camera_controller.mouse_wheel(wheel, direction, x, y)
