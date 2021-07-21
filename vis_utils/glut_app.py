@@ -118,7 +118,6 @@ class GLUTApp(object):
             sim_settings = dict()
         self.sim_settings = sim_settings
         self.graphics_context = GraphicsContext(width, height)
-        self.console = Console([0, 0], scale=console_scale)
 
         sim = None
         if constants.activate_simulation:

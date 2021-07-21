@@ -26,7 +26,7 @@ from .renderer.text_renderer import TextRenderer
 
 class Console(object):
     def __init__(self, top_left, scale=1.0, z=-10, alpha=255, max_line_length=1000):
-        self.text_renderer = TextRenderer(alpha)
+        self.text_renderer = TextRenderer()
 
         self.top_left = np.array(top_left)
         self.min_pos = np.array(self.top_left[:])

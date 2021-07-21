@@ -113,7 +113,7 @@ class TextTechnique(Technique):
 
 
 class TextRenderer(object):
-    def __init__(self, ):
+    def __init__(self):
         self.technique = TextTechnique()
         self.vertex_array_type = GL_QUADS
         vertices = []
