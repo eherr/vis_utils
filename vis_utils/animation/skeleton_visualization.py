@@ -33,7 +33,9 @@ SKELETON_DRAW_MODE_NONE = 0
 SKELETON_DRAW_MODE_LINES = 1
 SKELETON_DRAW_MODE_BOXES = 2
 SKELETON_DRAW_MODE_CS = 3
-DEFAULT_BOX_SIZE = 2.0
+DEFAULT_BOX_SIZE = 1.0
+DEFAULT_WIDTH_FACTOR = 32.0
+
 
 
 class SkeletonVisualization(ComponentBase):
@@ -55,7 +57,13 @@ class SkeletonVisualization(ComponentBase):
         self.line_renderer = None
         self.line_color = [0,0,1]
 
-    def set_skeleton(self, skeleton, visualize=True, scale=1.0):
+    def set_skeleton(self, skeleton, visualize=True, width_scale=None):
+        if width_scale is None:
+            min_p, max_p = skeleton.get_bounding_box()
+            assert np.all(np.abs(max_p-min_p) <  1000)
+            height = (max_p[1] - min_p[1])
+            width_scale = height/(DEFAULT_WIDTH_FACTOR*DEFAULT_BOX_SIZE)
+            print("guess width")
         self.visualize = visualize
         self.skeleton = skeleton
         self._joints = skeleton.animated_joints
@@ -70,13 +78,13 @@ class SkeletonVisualization(ComponentBase):
         self.matrices = [None for j in self._joints]
         self._has_shapes = False
         if visualize:
-            self._create_shapes(scale)
+            self._create_shapes(width_scale)
             self.debug_skeleton = DebugSkeletonRenderer(skeleton, self._joints, self.color)
             
 
-    def _create_shapes(self, scale=1.0):
-        self.box_scale = scale
-        size = DEFAULT_BOX_SIZE *scale#*0.1 for physics environemnt
+    def _create_shapes(self, width_scale=1.0):
+        self.box_scale = width_scale
+        width_scale = DEFAULT_BOX_SIZE *width_scale
         self._material = copy(materials.standard)
         self._material.diffuse_color = self.color
         self._material.ambient_color = np.array(self.color)*0.3
@@ -85,7 +93,7 @@ class SkeletonVisualization(ComponentBase):
             for c in self.skeleton.nodes[j].children:
                 v = np.array(c.offset)
                 if np.linalg.norm(v) > 0.0:
-                    bone = Mesh.build_bone_shape(v, size, self._material)
+                    bone = Mesh.build_bone_shape(v, width_scale, self._material)
                     #bone = BoneRenderer(vector, size, self._material)
                     self.shapes[j].append(bone)
         self._has_shapes = True

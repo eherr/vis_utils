@@ -368,15 +368,14 @@ def load_motion_from_bvh(filename):
     motion_vector.skeleton = SkeletonBuilder().load_from_bvh(bvh_reader, animated_joints=animated_joints)
     return motion_vector
 
-def attach_skeleton_visualization(builder, scene_object, skeleton, color, scale=1.0):
+def attach_skeleton_visualization(builder, scene_object, skeleton, color, width_scale=None):
     skeleton_vis = SkeletonVisualization(scene_object, color)
-    skeleton_vis.set_skeleton(skeleton, True, scale)
+    skeleton_vis.set_skeleton(skeleton, True, width_scale)
     frame = skeleton_vis.skeleton.reference_frame
     skeleton_vis.updateTransformation(frame, np.eye(4))
     skeleton_vis.draw_mode = 2
     #animation_src.vis = skeleton_vis
     scene_object.add_component("skeleton_vis", skeleton_vis)
-    print("attached skeleton vis", scale)
     return skeleton_vis
 
 
