@@ -89,7 +89,7 @@ MOUSE_BUTTON_STATE_UP = 1
 
 
 class GLUTApp(object):
-    def __init__(self, width, height, title="GLUTApp", console_scale=0.5, camera_pose=None, maxfps=60, sim_settings=None,
+    def __init__(self, width, height, title="GLUTApp", camera_pose=None, maxfps=60, sim_settings=None,
                  sync_sim=True, use_shadows=True, use_frame_buffer=True, clear_color=DEFAULT_CLEAR_COLOR, sim_dt=1.0/200):
         self.maxfps = maxfps
         self.sim_dt = sim_dt
