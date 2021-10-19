@@ -148,15 +148,20 @@ class GLUTApp(object):
         self.use_shadows = use_shadows
         self.use_frame_buffer = use_frame_buffer
         self.reshape(width, height)
+        self.fixed_dt = False
+        self.is_running = False
+        self.enable_object_selection = False
 
     def update(self):
         t = time.perf_counter()
-        while t < self.next_time:
-            st = self.next_time - t
-            time.sleep(st)
-            t = time.perf_counter()
-
-        dt = t - self.last_time
+        if self.fixed_dt:
+            dt = self.interval
+        else:
+            while t < self.next_time:
+                st = self.next_time - t
+                time.sleep(st)
+                t = time.perf_counter()
+            dt = t - self.last_time
         self.last_time = t
         fps= 1.0/dt
         if self.synchronize_updates:
@@ -227,7 +232,10 @@ class GLUTApp(object):
         self.graphics_context.console.set_lines(lines)
 
     def get_sim_steps_per_update(self):
-        return np.floor(self.interval/self.sim_dt)
+        if self.interval > self.sim_dt:
+            return np.floor(self.interval/self.sim_dt)
+        else:
+            return 1
 
     def mouse_click(self, button, state, x, y):
         self.camera_controller.mouse(button, state, x, y)
