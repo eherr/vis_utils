@@ -29,11 +29,14 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
 import imgui
+from collections import deque
 from OpenGL.GL import *
 from OpenGL.GLU import *
+from OpenGL.arrays import vbo
+import networkx as nx
+import seaborn.apionly as sns
 from .techniques import Technique, ColorTechnique
 from ..shaders import ShaderManager
-from OpenGL.arrays import vbo
 
 
 class PylabPlotter(object):
@@ -72,20 +75,18 @@ class PylabPlotter(object):
 
 
 class LinePylabPlotter(PylabPlotter):
-    def __init__(self, title, size, color=(0,1,0), data_length=100000, dpi=400, font_size=8):
+    def __init__(self, title, size, data_length=100000, dpi=400, font_size=8):
         super().__init__(title, size, dpi, font_size)
-        self.data_length = data_length
-        self.color = color
         self.data = dict()
-        self.color = color
         self.colors = dict()
+        self.data_length = data_length
 
     def clear_data(self):
         for key in self.data:
-            self.data[key] = []
+            self.data[key].clear()
 
     def add_line(self, key, color):
-        self.data[key] = []
+        self.data[key] = deque([], self.data_length)
         self.colors[key] = color
 
     def update_data(self, key, point):
@@ -103,10 +104,11 @@ class LinePylabPlotter(PylabPlotter):
                 label.set_fontsize(self.font_size) 
             for label in ax.get_xticklabels():
                 label.set_fontsize(self.font_size) 
-            ax.plot(self.data[key][-self.data_length:], c=self.colors[key])
+            ax.plot(self.data[key], c=self.colors[key], label=key)
             #plt.yticks(fontsize=self.font_size)
             #plt.xticks(fontsize=self.font_size)
-
+            if len(self.data) > 1:
+                ax.legend(loc='upper left', fontsize=self.font_size)
             ax.get_xaxis().set_visible(True)
             self.canvas.draw()
 
@@ -370,6 +372,9 @@ class LinePlotRenderer(PlotRenderer):
 
     def add_line(self, key, color):
         self.technique.plotter.add_line(key, color)
+
+    def has_line(self, key):
+        return key in self.technique.plotter.data
 
     def update_data(self, key, point):
         self.technique.plotter.update_data(key, point)

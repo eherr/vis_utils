@@ -22,6 +22,7 @@
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 import numpy as np
 import collections
+from collections import deque
 from .renderer.pylab_plot_renderer import LinePlotRenderer, ImgPlotRenderer, AnnotationRenderer, TickRenderer
 
 
@@ -69,6 +70,12 @@ class PlotManager(object):
     def add_line(self, name, key, color):
         if name in self.plots:
             self.plots[name].add_line(key, color)
+        
+    def has_line(self, name, key):
+        if name in self.plots:
+            return self.plots[name].has_line(key)
+        else:
+            return False
 
     def draw(self, orthographic_matrix):
         min_pos = np.array([0,0])
@@ -88,6 +95,10 @@ class PlotManager(object):
     def update_data(self, plot_name, key, p):
         if plot_name in self.plots:
             self.plots[plot_name].update_data(key, p)
+
+    def set_data(self, plot_name, key, points):
+        if plot_name in self.plots:
+            self.plots[plot_name].technique.plotter.data[key] = deque(points, self.plots[plot_name].technique.plotter.data_length)
 
     def set_img_data(self, plot_name, data):
         if plot_name in self.plots:

@@ -51,7 +51,7 @@ def getIfromRGB(rgb):
 
 
 class GraphicsContext(object):
-    def __init__(self,  w, h, use_frame_buffer=True, use_shadows=True, sky_color=DEFAULT_SKY_COLOR):
+    def __init__(self,  w, h, use_frame_buffer=True, use_shadows=True, activate_plots=True, sky_color=DEFAULT_SKY_COLOR):
         self.width = w
         self.height = h
         imgui.create_context()
@@ -85,7 +85,11 @@ class GraphicsContext(object):
         self.cs = CoordinateSystemObject(0.1)
         self.camera = OrbitingCamera()
         self.draw_plot = False
-        self.plot_manager = PlotManager(self.width, self.height)
+        self.activate_plots = activate_plots
+        if self.activate_plots:
+            self.plot_manager = PlotManager(self.width, self.height)
+        else:
+            self.plot_manager = False
         self.console = IMGUIConsole([0, 0], alpha=20)
         self.show_console = False
 
@@ -110,7 +114,7 @@ class GraphicsContext(object):
             self.frame_buffer.resize(w, h)
             self.color_buffer.resize(w, h)
             self.selection_buffer.resize(w, h)
-            if self.draw_plot:
+            if self.draw_plot and self.activate_plots:
                 self.plot_manager.resize(w, h)
 
     def render(self, scene, draw_debug=True):
@@ -155,8 +159,8 @@ class GraphicsContext(object):
                 self.frame_buffer.bind()
                 self.selection_buffer.draw_buffer_to_screen()
                 self.render_edit_widget(scene.scene_edit_widget, v_m, p_m, light_sources)
-                if self.draw_plot:
-                    self.plot_manager.draw(self.camera.get_orthographic_matrix())
+                #if self.draw_plot:
+                #    self.plot_manager.draw(self.camera.get_orthographic_matrix())
 
                 self.color_buffer.prepare_buffer()
                 self.color_picking_renderer.render_scene(object_list,  p_m, v_m, scene.scene_edit_widget)

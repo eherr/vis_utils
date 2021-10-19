@@ -88,11 +88,26 @@ class ExtendingLineRenderer(ColoredGeometryRenderer):
         self.max_length = maxLength
         self.vbo = vbo.VBO(np.array([], 'f'))
 
+    def set_points(self, points):
+        self.points = []
+        for p in points:
+            self.points.append([p[0], p[1], p[2], self.r, self.g, self.b])
+        self.vbo.set_array(np.array(self.points, 'f'))
+        self.numVertices = len(self.points)
+
     def addPoint(self, point):
         if self.numVertices > self.max_length:  # remove the first point
             self.points.pop(0)
-            self.numVertices += 1
+            self.numVertices -= 1
         self.points.append([point[0], point[1], point[2], self.r, self.g, self.b])
+        self.numVertices += 1
+        self.vbo.set_array(np.array(self.points, 'f'))
+
+    def addColoredPoint(self, point, color):
+        if self.numVertices > self.max_length:  # remove the first point
+            self.points.pop(0)
+            self.numVertices -= 1
+        self.points.append([point[0], point[1], point[2], color[0], color[1], color[2]])
         self.numVertices += 1
         self.vbo.set_array(np.array(self.points, 'f'))
 
