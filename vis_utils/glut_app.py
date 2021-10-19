@@ -148,6 +148,7 @@ class GLUTApp(object):
         self.use_shadows = use_shadows
         self.use_frame_buffer = use_frame_buffer
         self.reshape(width, height)
+        self.visualize = True
         self.fixed_dt = False
         self.is_running = False
         self.enable_object_selection = False
