@@ -34,7 +34,7 @@ class Task(object):
         self.active = False
         self.interval = None
         self.call_once = False
-        self.last_tick = time.clock()
+        self.last_tick = time.time()
 
     def start(self):
         self.active = True
@@ -55,7 +55,7 @@ class FuncCallTask(object):
         self.active = False
         self.interval = None
         self.call_once = True
-        self.last_tick = time.clock()
+        self.last_tick = time.time()
         self.scene = scene
         self.task_manager = task_manager
 
@@ -77,12 +77,12 @@ class FuncCallTask(object):
 class TaskManager(object):
     def __init__(self):
         self.tasks = collections.OrderedDict()
-        self.last_tick = time.clock()
+        self.last_tick = time.time()
         self.mutex = Lock()
 
     def update(self, dt):
         self.mutex.acquire()
-        tick = time.clock()
+        tick = time.time()
         func_keys = list(self.tasks.keys())
         for key in func_keys:
             delta = tick - self.tasks[key].last_tick
