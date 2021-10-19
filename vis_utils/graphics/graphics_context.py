@@ -40,6 +40,7 @@ from ..graphics.camera3d import OrbitingCamera
 from ..graphics.console import IMGUIConsole
 
 DEFAULT_SKY_COLOR = [0,0,0]
+ROTATION_SPEED = 15
 
 def getIfromRGB(rgb):
     red = int(rgb[0]*255)
@@ -183,6 +184,7 @@ class GraphicsContext(object):
         scene.draw(v_m, p_m)
         if draw_debug:
             scene.drawDebugVisualization(v_m, p_m)
+   
     def get_id_from_color_buffer(self, x,y):
         """https://www.opengl.org/discussion_boards/showthread.php/178310-glReadPixels
          https://www.khronos.org/opengl/wiki/Common_Mistakes#Texture_upload_and_pixel_reads"""
@@ -244,16 +246,16 @@ class GraphicsContext(object):
         return np.array([ray_start[0], ray_start[1], ray_start[2], 0]), ray_world
 
     def rotate_left(self):
-        self.camera.updateRotationMatrix(self.camera.pitch, self.camera.yaw + 15)
+        self.camera.updateRotationMatrix(self.camera.pitch, self.camera.yaw + ROTATION_SPEED)
 
     def rotate_right(self):
-        self.camera.updateRotationMatrix(self.camera.pitch, self.camera.yaw - 15)
+        self.camera.updateRotationMatrix(self.camera.pitch, self.camera.yaw - ROTATION_SPEED)
 
     def rotate_up(self):
-        self.camera.updateRotationMatrix(self.camera.pitch+15, self.camera.yaw)
+        self.camera.updateRotationMatrix(self.camera.pitch + ROTATION_SPEED, self.camera.yaw)
 
     def rotate_down(self):
-        self.camera.updateRotationMatrix(self.camera.pitch-15, self.camera.yaw)
+        self.camera.updateRotationMatrix(self.camera.pitch - ROTATION_SPEED, self.camera.yaw)
 
     def move_horizontally(self, v):
         self.camera.moveHorizontally(v)
