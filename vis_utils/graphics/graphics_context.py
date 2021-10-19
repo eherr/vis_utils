@@ -161,6 +161,7 @@ class GraphicsContext(object):
                 self.color_buffer.prepare_buffer()
                 self.color_picking_renderer.render_scene(object_list,  p_m, v_m, scene.scene_edit_widget)
                 self.frame_buffer.draw_buffer_to_screen()
+            self.draw_imgui()
 
     def render_edit_widget(self, edit_widget, v_m, p_m, light_sources):
         if edit_widget.visible:
@@ -270,4 +271,6 @@ class GraphicsContext(object):
 
         imgui.render()
         data = imgui.get_draw_data()
-        self.imgui_renderer.rend
+        self.imgui_renderer.render(data)
+        imgui.end_frame()
+
