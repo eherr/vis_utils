@@ -16,10 +16,10 @@ The library also supports the import of character meshes and skeletons from glb 
 
 ## Installation
 
-Clone the repository and install the package with editable flag.
+Clone the repository and install the package with editable flag or use the follwing command:
 
 ```bat
-pip install -e .
+pip install git+https://github.com/eherr/vis_utils
 ```
 
 ## Example 
