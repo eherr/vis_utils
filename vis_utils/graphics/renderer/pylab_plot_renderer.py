@@ -33,8 +33,6 @@ from collections import deque
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.arrays import vbo
-import networkx as nx
-import seaborn.apionly as sns
 from .techniques import Technique, ColorTechnique
 from ..shaders import ShaderManager
 
