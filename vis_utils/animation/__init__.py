@@ -184,7 +184,7 @@ def create_animated_mesh(builder, name, model_data, scale=1, visualize=True):
 
     vis = None
     if visualize:
-        vis = builder.create_component("skeleton_vis", scene_object, skeleton, color=(0,1,0), scale=0.1)
+        vis = builder.create_component("skeleton_vis", scene_object, skeleton, color=(0,1,0), width_scale=0.1)
         #vis.box_scale = 0.1
     
     animation_controller = SkeletonAnimationController(scene_object)
