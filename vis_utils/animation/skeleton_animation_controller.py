@@ -516,44 +516,6 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         model_data = load_model_from_fbx_file(filename)
         scene.object_builder.create_component("animated_mesh", self.scene_object, model_data, animation_controller)
 
-    def attach_figure_controller(self, figure_def, width_scale=1.0, foot_height_scale=1.0, density=1.0):
-        scene = self.scene_object.scene
-        skeleton = self._visualization.skeleton
-        scene.object_builder.create_component("figure_controller", self.scene_object, skeleton, figure_def=figure_def, width_scale=width_scale,
-                                             foot_height_scale=foot_height_scale, density=density, visualize=scene.visualize)
-
-        figure_c = self.scene_object._components["figure_controller"]
-        figure_c.set_animation_src(self)
-        if "animated_mesh" in self.scene_object._components:
-            figure_c.attach_to_visualization(skeleton, self.scene_object._components["animated_mesh"])
-
-
-    def attach_sampling_controller(self, figure_def, width_scale=1.0):
-        scene = self.scene_object.scene
-        skeleton = self._visualization.skeleton
-        scene.object_builder.attach_sampling_controller(self.scene_object, skeleton, figure_def=figure_def,
-                                                        width_scale=width_scale)
-
-        figure_c = self.scene_object._components["figure_controller"]
-        figure_c.set_animation_src(self)
-        if "animated_mesh" in self.scene_object._components:
-            figure_c.attach_to_visualization(skeleton, self.scene_object._components["animated_mesh"])
-
-
-    def attach_mcts_async_controller(self, optimization_settings, figure_def, width_scale=1.0, foot_height_scale=1.0, density=1.0):
-        scene = self.scene_object.scene
-        skeleton = self._visualization.skeleton
-        scene.object_builder.create_component("mcts_async_controller",self.scene_object, optimization_settings, skeleton, figure_def=figure_def,
-                                                      width_scale=width_scale, foot_height_scale=foot_height_scale,
-                                                      density=density, visualize=scene.visualize)
-
-        figure_c = self.scene_object._components["figure_controller"]
-        figure_c.set_animation_src(self)
-        if "animated_mesh" in self.scene_object._components:
-            figure_c.attach_to_visualization(skeleton, self.scene_object._components["animated_mesh"])
-        else:
-            figure_c.set_target_skeleton(skeleton)
-
     def get_bone_matrices(self):
         return self._visualization.matrices
 
