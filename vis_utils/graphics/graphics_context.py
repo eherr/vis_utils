@@ -24,6 +24,7 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import gluUnProject
 import imgui
+import pygame
 from imgui.integrations.opengl import ProgrammablePipelineRenderer
 from ..graphics.geometry.primitive_manager import PrimitiveManager
 from ..graphics.shaders import ShaderManager
@@ -38,6 +39,7 @@ from ..graphics.selection_frame_buffer import SelectionFrameBuffer
 from ..graphics.plot_manager import PlotManager
 from ..graphics.camera3d import OrbitingCamera
 from ..graphics.console import IMGUIConsole
+from ..graphics.renderer.label_renderer import LabelRenderer
 
 DEFAULT_SKY_COLOR = [0,0,0]
 ROTATION_SPEED = 15
@@ -52,14 +54,14 @@ def getIfromRGB(rgb):
 
 
 class GraphicsContext(object):
-    def __init__(self,  w, h, use_frame_buffer=True, use_shadows=True, activate_plots=True, sky_color=DEFAULT_SKY_COLOR):
+    def __init__(self,  w, h, **kwargs):
         self.width = w
         self.height = h
         imgui.create_context()
         self.imgui_renderer = ProgrammablePipelineRenderer()
         self.io = imgui.get_io()
         self.io.display_size = (w, h)
-        self.sky_color = sky_color
+        self.sky_color = kwargs.get("sky_color", DEFAULT_SKY_COLOR)
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_TEXTURE_2D)
         #https://learnopengl.com/Advanced-OpenGL/Blending
@@ -68,9 +70,9 @@ class GraphicsContext(object):
         glLineWidth(1.5)
         ShaderManager().initShaderMap()  # opengl needs to initialize before an object of this class is initialized
         PrimitiveManager().init()
-        self.use_shadows = use_shadows
-        self.use_frame_buffer = use_frame_buffer
-        if use_frame_buffer:
+        self.use_shadows =  kwargs.get("use_shadows", True)
+        self.use_frame_buffer = kwargs.get("use_frame_buffer", True)
+        if self.use_frame_buffer:
             self.frame_buffer = MultiResolutionScreenFramebuffer(w,h, 4)
             #self.frame_buffer = ScreenFramebuffer(800, 600)
             self.color_buffer = ScreenFramebuffer(w,h)
@@ -85,13 +87,14 @@ class GraphicsContext(object):
 
         self.cs = CoordinateSystemObject(0.1)
         self.camera = OrbitingCamera()
-        self.draw_plot = False
-        self.activate_plots = activate_plots
+        self.draw_labels = kwargs.get("draw_labels", False)
+        self.activate_plots =  kwargs.get("activate_plots", True)
         if self.activate_plots:
             self.plot_manager = PlotManager(self.width, self.height)
         else:
-            self.plot_manager = False
+            self.plot_manager = None
         self.console = IMGUIConsole([0, 0], alpha=20)
+        self.label_renderer = LabelRenderer()
         self.show_console = False
 
         print("init opengl")
@@ -115,7 +118,7 @@ class GraphicsContext(object):
             self.frame_buffer.resize(w, h)
             self.color_buffer.resize(w, h)
             self.selection_buffer.resize(w, h)
-            if self.draw_plot and self.activate_plots:
+            if self.activate_plots:
                 self.plot_manager.resize(w, h)
 
     def render(self, scene, draw_debug=True):
@@ -130,6 +133,8 @@ class GraphicsContext(object):
 
         p_m = self.camera.get_projection_matrix()
         v_m = self.camera.get_view_matrix()
+        o_m = self.camera.get_orthographic_matrix()
+
 
         object_list = scene.get_visible_objects(self.camera)
         light_sources = scene.lightSources
@@ -162,6 +167,8 @@ class GraphicsContext(object):
                 self.render_edit_widget(scene.scene_edit_widget, v_m, p_m, light_sources)
                 #if self.draw_plot:
                 #    self.plot_manager.draw(self.camera.get_orthographic_matrix())
+                if self.draw_labels:
+                    self.label_renderer.render_scene(object_list, v_m, p_m, o_m, self)
 
                 self.color_buffer.prepare_buffer()
                 self.color_picking_renderer.render_scene(object_list,  p_m, v_m, scene.scene_edit_widget)
@@ -270,7 +277,7 @@ class GraphicsContext(object):
         io = self.io
         # start new frame context
         imgui.new_frame()
-        if self.draw_plot:
+        if self.activate_plots:
             self.plot_manager.render_imgui()
         if self.show_console:
             self.console.render_lines()

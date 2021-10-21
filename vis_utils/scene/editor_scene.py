@@ -159,14 +159,6 @@ class EditorScene(Scene):
             scene_object.add_component("group_player", group_animation_controller)
             self.addAnimationController(scene_object, "group_player")
 
-    def createBlendAnimationController(self, node_ids):
-        anim_controllers = self.get_animation_controllers(node_ids)
-        motions = [c._motion for c in anim_controllers]
-        if len(motions) > 0:
-            name = "Blend Controller"
-            skeleton = anim_controllers[0].get_skeleton_copy()
-            self.object_builder.create_object("blend_controller",name, skeleton, motions)
-
     def addArticulatedBody(self, node_id):
         scene_object = self.getSceneNode(node_id)
         if "static_mesh" in list(scene_object._components.keys()):
@@ -191,7 +183,6 @@ class EditorScene(Scene):
                 anim_controller = anim_object._components["animation_controller"]
                 anim_controllers.append(anim_controller)
         return anim_controllers
-
 
     def runPythonScript(self, filename):
         with open(filename, "r") as script_file:

@@ -117,7 +117,7 @@ class GLUTApp(object):
         if sim_settings is None:
             sim_settings = dict()
         self.sim_settings = sim_settings
-        self.graphics_context = GraphicsContext(width, height)
+        self.graphics_context = GraphicsContext(width, height, sky_color=clear_color)
 
         sim = None
         if constants.activate_simulation:

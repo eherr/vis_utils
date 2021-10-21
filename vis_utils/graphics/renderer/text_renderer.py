@@ -30,13 +30,15 @@ from OpenGL.arrays import vbo
 
 
 class TextTechnique(Technique):
-    def __init__(self):
+    def __init__(self, font_size=64, alpha=255):
         self.shader = ShaderManager().getShader("texture")
         uniform_names = ["MVP","tex"]
         self._find_uniform_locations(uniform_names)
         attributes = ['position', 'vertexUV']
         self._find_attribute_locations(attributes)
         self.texture_id = -1
+        self.alpha = alpha
+        self.font = pygame.font.Font(None, font_size)
         self.generate_texture()
 
     def prepare(self, orthographic_matrix):
@@ -51,48 +53,25 @@ class TextTechnique(Technique):
         return self.update_texture("")
 
     def update_texture(self, text):
-        font = pygame.font.Font(None, 64)
-        textSurface = font.render(text, True, (255, 255, 255, 255),
-                                  (0, 0, 0, 255))
+        textSurface = self.font.render(text, True, (255, 255, 255, self.alpha), (0, 0, 0, self.alpha))
+        textSurface.set_alpha(0)
         ix, iy = textSurface.get_width(), textSurface.get_height()
-        image = pygame.image.tostring(textSurface, "RGBX", True)
+        image = pygame.image.tostring(textSurface, "RGBA", True)
+        #image = textSurface.get_buffer().raw
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.texture_id)
 
-        glTexImage2D(GL_TEXTURE_2D, 0, 3, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
-        # glBindTexture(GL_TEXTURE_2D, i)
         glUniform1i(self.tex_loc, 0)
         return np.array([ix, iy])
 
     def stop(self):
         glUseProgram(0)
 
-    def use2(self, min_pos, max_pos, z):
-        glEnableVertexAttribArray(self.vertexUV_loc)
-        texcoord_index = self.vertexUV_loc
-        pos_loc = self.position_loc
-
-        # texcoord_index = glGetAttribLocation(self.shader, "vertexUV")
-        print("tex", texcoord_index)
-        glBegin(GL_QUADS)
-        glVertexAttrib3f(pos_loc, min_pos[0], min_pos[1], z)
-        #glVertexAttrib2f(self.vertexUV_loc, 0.0, 0.0)
-        glVertexAttrib3f(pos_loc, max_pos[0], min_pos[1], z)
-        # glVertexAttrib2f(self.vertexUV_loc, 1.0, 0.0)
-
-
-        glVertexAttrib3f(pos_loc, max_pos[0], max_pos[1], z)
-        # glVertexAttrib2f(self.vertexUV_loc, 1.0, 1.0)
-
-
-        glVertexAttrib3f(pos_loc, min_pos[0], max_pos[1], z)
-        # glVertexAttrib2f(self.vertexUV_loc, 0.0, 1.0)
-
-        glEnd()
 
     def use(self, vbo, vertex_array_type, n_vertices):
 
@@ -113,8 +92,8 @@ class TextTechnique(Technique):
 
 
 class TextRenderer(object):
-    def __init__(self):
-        self.technique = TextTechnique()
+    def __init__(self, font_size=64, alpha=0):
+        self.technique = TextTechnique(font_size, alpha)
         self.vertex_array_type = GL_QUADS
         vertices = []
         self._vbo = vbo.VBO(np.array(vertices,'f'))
