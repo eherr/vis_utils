@@ -584,4 +584,6 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
     def replace_frames(self, frames):
         return self._motion.replace_frames(frames)
 
-
+    def get_labeled_points(self):
+        p = [m[:3,3] for m in self._visualization.matrices]
+        return self.get_animated_joints(), p
