@@ -61,6 +61,7 @@ uniform mat4 bones[MAX_BONES];
 uniform int lightCount;
 uniform LightSource lights[MAX_LIGHTS];
 uniform int useShadow;
+uniform float fogDistanceFactor = 0.0007;
 
 
 out vec3 fragVert;
@@ -69,7 +70,6 @@ out vec2 fragUV;
 out vec4 shadowCoord[MAX_LIGHTS];
 out float fogFactor;
 
-const float density = 0.0007;
 const float gradient = 1.5;
 
 void main()
@@ -117,7 +117,7 @@ void main()
 
    fragVert = position;
    fragUV = uv;
-   fogFactor = exp(-pow((distance*density), gradient));
+   fogFactor = exp(-pow((distance*fogDistanceFactor), gradient));
 
 }"""
 

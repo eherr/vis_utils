@@ -25,7 +25,7 @@ import numpy as np
 from OpenGL.GL import *
 from ..shaders import ShaderManager
 MAIN_MAX_LIGHTS = 8
-
+FOG_DISTANCE_FACTOR = 0.0003# 0.0007
 
 class Renderer(object):
     def _find_uniform_locations(self, uniform_names):
@@ -46,16 +46,17 @@ class Renderer(object):
 class MainRenderer(Renderer):
     uniform_names = ['modelMatrix', 'viewMatrix', 'projectionMatrix', "tex", 'viewerPos', 'material.ambient_color',
                      'material.diffuse_color', 'material.specular_color', #              'light.intensities', 'light.position',
-                     'material.specular_shininess', 'useTexture', 'useSkinning', 'bones', 'boneCount', "lightCount", "lights", "useShadow", "skyColor"]
+                     'material.specular_shininess', 'useTexture', 'useSkinning', 'bones', 'boneCount', "lightCount", "lights", "useShadow", "skyColor", "fogDistanceFactor"]
     attribute_names = ['position', "normal", 'uv', 'boneIDs', 'weights']
-    def __init__(self, sky_color=[0,0,0]):
+    def __init__(self, **kwargs):
         self.shader = ShaderManager().getShader("main")
         self._find_uniform_locations(self.uniform_names)
         self._find_attribute_locations(self.attribute_names)
         self.texture_unit_counter = 0
         self.diffuse_sampler = glGenSamplers(1)
-        self.use_shadow = True
-        self.sky_color = sky_color
+        self.use_shadow = kwargs.get("use_shadow", True)
+        self.sky_color = kwargs.get("sky_color", [0,0,0])
+        self.fog_distance_factor = kwargs.get("fog_distance_factor", FOG_DISTANCE_FACTOR)
 
     def upload_material(self, material):
         # upload material properties
@@ -115,6 +116,7 @@ class MainRenderer(Renderer):
         glUniform3f(self.viewerPos_loc, view_matrix[0, 3], view_matrix[1, 3], view_matrix[2, 3])
         glUniform1i(self.useShadow_loc, self.use_shadow)
         glUniform3f(self.skyColor_loc,  self.sky_color[0],  self.sky_color[1],  self.sky_color[2])
+        glUniform1f(self.fogDistanceFactor_loc,  self.fog_distance_factor)
 
         #glUniformMatrix4fv(self.lightViewMatrix_loc, 1, GL_FALSE, self.light.view_mat)
         #glUniformMatrix4fv(self.lightProjectionMatrix_loc, 1, GL_FALSE, self.light.proj_mat)
@@ -144,14 +146,14 @@ class MainRenderer(Renderer):
                         m = state[idx]
                         for geom in skeleton.shapes[key]:
                             self.render(np.dot(geom.transform, m), geom)
-            if "character" in o._components and o._components["character"].visible:
-                char = o._components["character"]
+            if "articulated_figure" in o._components and o._components["articulated_figure"].visible:
+                char = o._components["articulated_figure"]
                 for key, geom in char.body_shapes.items():
                     self.render(char.body_matrices[key], geom)
                 for key, geom in char.joint_shapes.items():
                     self.render(char.joint_matrices[key], geom)
-            if "character_mirror" in o._components and o._components["character_mirror"].visible:
-                mirror = o._components["character_mirror"]
+            if "articulated_figure_mirror" in o._components and o._components["articulated_figure_mirror"].visible:
+                mirror = o._components["articulated_figure_mirror"]
                 char = mirror.src_figure
                 for s in mirror.states:
                     for key, geom in char.body_shapes.items():

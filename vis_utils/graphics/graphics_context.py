@@ -82,7 +82,9 @@ class GraphicsContext(object):
             self.selection_renderer = SelectionRenderer()
         if self.use_shadows:
             self.shadow_renderer = ShadowMapRenderer()
-        self.main_renderer = MainRenderer(self.sky_color)
+        
+        self.main_renderer = MainRenderer(sky_color=self.sky_color)
+
         self.show_shadow_map = False
 
         self.cs = CoordinateSystemObject(0.1)
