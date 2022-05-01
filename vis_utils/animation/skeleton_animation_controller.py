@@ -136,7 +136,8 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
 
     def set_skeleton(self, skeleton, visualize=True):
         self.visualize = visualize
-        if visualize:
+        self.skeleton = skeleton
+        if visualize and self._visualization is not None:
             self._visualization.set_skeleton(skeleton, visualize)
 
     def set_motion(self, motion):
@@ -155,6 +156,7 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         self._motion.set_random_color_annotation()
 
     def set_visualization(self, visualization, draw_mode=SKELETON_DRAW_MODE_BOXES):
+        self.skeleton = visualization.skeleton
         self._visualization = visualization
         self._visualization.draw_mode = draw_mode
         self._visualization.updateTransformation(self._motion.get_pose(), self.scene_object.scale_matrix)
@@ -185,7 +187,7 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         self.set_transformation_from_frame(self._motion.get_pose())
 
     def set_transformation_from_frame(self, frame):
-        if frame is None:
+        if frame is None or self._visualization is None:
             return
         self._visualization.updateTransformation(frame, self.scene_object.scale_matrix)
         #self.update_markers()
@@ -232,7 +234,7 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
             return self.filePath
 
     def getNumberOfJoints(self):
-        return len(self._visualization.skeleton.get_n_joints())
+        return len(self.skeleton.get_n_joints())
 
 
     def setColor(self, color):
@@ -245,8 +247,8 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
     def getPosition(self):
         m = self.scene_object.transformation
         if self._motion is not None:
-            root = self._visualization.skeleton.root
-            pos = self._visualization.skeleton.nodes[root].offset + self._motion.get_pose()[:3]
+            root = self.skeleton.root
+            pos = self.skeleton.nodes[root].offset + self._motion.get_pose()[:3]
             pos = [pos[0], pos[1], pos[2], 1]
             pos = np.dot(m, pos)[:3]
             return np.array(pos)
@@ -257,13 +259,13 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         return self._visualization
 
     def create_ragdoll(self, use_reference_frame=True, create_markers=True):
-        if self._motion is not None and self._visualization.skeleton.skeleton_model is not None:
+        if self._motion is not None and self.skeleton.skeleton_model is not None:
             frame = self._motion.get_pose()
-            skeleton = self._visualization.skeleton
+            skeleton = self.skeleton
             if use_reference_frame:
                 frame = skeleton.get_reduced_reference_frame()
             o = self.scene_object.scene.object_builder.create_component("ragdoll_from_skeleton", skeleton, frame, figure_def, add_contact_vis=False)
-            #o = self.scene_object.scene.object_builder.create_ragdoll_from_skeleton(self._visualization.skeleton, frame)
+            #o = self.scene_object.scene.object_builder.create_ragdoll_from_skeleton(self.skeleton, frame)
             self.scene_object.scene.addAnimationController(o, "character_animation_recorder")
             self.recorder = o._components["character_animation_recorder"]
         if create_markers:
@@ -285,7 +287,7 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         scale = self.scene_object.scale_matrix[0][0]
         for joint in list(self.markers.keys()):
             for marker in self.markers[joint]:
-                m = self._visualization.skeleton.nodes[joint].get_global_matrix(frame, True)
+                m = self.skeleton.nodes[joint].get_global_matrix(frame, True)
                 position = np.dot(m, marker["relative_trans"])[:3, 3]
                 marker["object"].setPosition(position*scale)
 
@@ -293,7 +295,7 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         self.loopAnimation = not self.loopAnimation
 
     def get_bvh_string(self):
-        skeleton = self._visualization.skeleton
+        skeleton = self.skeleton
         print("generate bvh string", len(skeleton.animated_joints))
         frames = self._motion.get_frames()
         frames = skeleton.add_fixed_joint_parameters_to_motion(frames)
@@ -302,14 +304,14 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         return bvh_writer.generate_bvh_string()
 
     def get_json_data(self):
-        self._motion.mv.skeleton = self._visualization.skeleton
+        self._motion.mv.skeleton = self.skeleton
         return self._motion.mv.to_db_format()
 
     def export_to_file(self, filename, export_format="bvh", frame_range=None):
         if self._motion is not None:
             frame_time = self._motion.get_frame_time()
             if export_format == "bvh":
-                skeleton = self._visualization.skeleton
+                skeleton = self.skeleton
                 frames = self._motion.get_frames()
                 frames = np.array(frames)
                 if frames is not None:
@@ -331,21 +333,21 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
                     bvh_writer = BVHWriter(None, skeleton, frames, frame_time, True)
                 bvh_writer.write(filename)
             elif export_format == "fbx":
-                export_motion_vector_to_fbx_file(self._visualization.skeleton,
+                export_motion_vector_to_fbx_file(self.skeleton,
                                                  self._motion, filename)
             elif export_format == "json":
-                self._visualization.skeleton.save_to_json(filename)
+                self.skeleton.save_to_json(filename)
             else:
                 print("unsupported format", export_format)
 
     def retarget_from_src(self, src_controller, scale_factor=1.0, src_model=None, target_model=None, frame_range=None):
-        target_skeleton = self._visualization.skeleton
+        target_skeleton = self.skeleton
         frame_time = src_controller.get_frame_time()
         if target_model is not None:
             target_skeleton.skeleton_model = target_model
         new_frames = None
         if type(src_controller) == SkeletonAnimationController:
-            src_skeleton = src_controller._visualization.skeleton
+            src_skeleton = src_controller.skeleton
             src_frames = src_controller._motion.get_frames()
             if src_model is not None:
                 src_skeleton.skeleton_model = src_model
@@ -372,7 +374,7 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         return self._motion.get_n_frames()
 
     def retarget_from_frames(self, src_skeleton, src_frames, scale_factor=1.0, target_model=None, frame_range=None, place_on_ground=False, joint_filter=None):
-        target_skeleton = self._visualization.skeleton
+        target_skeleton = self.skeleton
         if target_model is not None:
             target_skeleton.skeleton_model = target_model
         new_frames = retarget_from_src_to_target(src_skeleton, target_skeleton, src_frames,
@@ -389,7 +391,7 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         color = self._visualization.color
 
         #self._motion.mv.frames[:,:3] *= scale_factor
-        skeleton = self._visualization.skeleton
+        skeleton = self.skeleton
         skeleton.scale(scale_factor)
         self._motion.mv.scale_root(scale_factor)
         self._visualization = SkeletonVisualization(self.scene_object, color)
@@ -421,7 +423,7 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
 
     def plot_joint_trajectory(self, joint_name):
         scene_object = None
-        if joint_name in list(self._visualization.skeleton.nodes.keys()):
+        if joint_name in list(self.skeleton.nodes.keys()):
             trajectory = list()
             for f in self._motion.get_frames():
                 p = self.get_joint_position(joint_name, f)
@@ -435,13 +437,13 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         return scene_object
 
     def get_joint_position(self, joint_name, frame):
-        if joint_name in self._visualization.skeleton.nodes.keys():
-            return self._visualization.skeleton.nodes[joint_name].get_global_position(frame)
+        if joint_name in self.skeleton.nodes.keys():
+            return self.skeleton.nodes[joint_name].get_global_position(frame)
         else:
             return None
 
     def get_skeleton_copy(self):
-        return deepcopy(self._visualization.skeleton)
+        return deepcopy(self.skeleton)
 
     def get_motion_vector_copy(self, start_frame=0, end_frame=-1):
         mv_copy = MotionVector()
@@ -479,12 +481,12 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         elif filename.endswith("_mg.zip"):
             self.scene_object.scene.attach_mg_state_machine(self.scene_object, filename)
             self._motion = self.scene_object._components["morphablegraph_state_machine"]
-            self._motion.set_target_skeleton(self._visualization.skeleton)
+            self._motion.set_target_skeleton(self.skeleton)
             self.activate_emit = False
         elif filename.endswith("amc"):
             amc_frames = parse_amc_file(filename)
             motion_vector = MotionVector()
-            motion_vector.from_amc_data(self._visualization.skeleton, amc_frames)
+            motion_vector.from_amc_data(self.skeleton, amc_frames)
             self._motion.replace_frames(motion_vector.frames)
             self._motion.mv.frame_time = 1.0/120
             self.currentFrameNumber = 0
@@ -509,7 +511,7 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         self.set_skeleton_model(model)
 
     def set_skeleton_model(self, model):
-        self._visualization.skeleton.skeleton_model = model
+        self.skeleton.skeleton_model = model
 
     def attach_animated_mesh_component(self, filename, animation_controller="animation_controller"):
         scene = self.scene_object.scene
@@ -523,7 +525,7 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         self._motion.set_color_annotation_from_labels(labels, colors)
 
     def set_reference_frame(self, frame_idx):
-        self._visualization.skeleton.set_reference_frame(self._motion.get_pose(frame_idx))
+        self.skeleton.set_reference_frame(self._motion.get_pose(frame_idx))
 
     def get_semantic_annotation(self):
         return self._motion.get_semantic_annotation()
@@ -565,13 +567,13 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         return self._motion.get_frame_time()
 
     def get_skeleton(self):
-        return self._visualization.skeleton
+        return self.skeleton
 
     def set_time(self, t):
         self._motion.set_time(t)
 
     def get_animated_joints(self):
-        return self._visualization.skeleton.animated_joints
+        return self.skeleton.animated_joints
 
     def add_skeleton_mirror(self, snapshot_interval=10):
         skeleton_mirror = SkeletonMirrorComponent(self.scene_object, self._visualization, snapshot_interval)

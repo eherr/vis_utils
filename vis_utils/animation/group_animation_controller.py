@@ -66,7 +66,7 @@ class GroupAnimationController(ComponentBase, AnimationController):
 
     def updateTransformation(self, frameNumber=None):
         for controller in self._animation_controllers:
-            if frameNumber is not None:
+            if frameNumber is not None and 0 <= frameNumber < controller.getNumberOfFrames():
                 controller.setCurrentFrameNumber(frameNumber)
             controller.updateTransformation()
 

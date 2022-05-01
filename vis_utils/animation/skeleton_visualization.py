@@ -35,7 +35,7 @@ SKELETON_DRAW_MODE_BOXES = 2
 SKELETON_DRAW_MODE_CS = 3
 DEFAULT_BOX_SIZE = 1.0
 DEFAULT_WIDTH_FACTOR = 32.0
-
+ZERO_VECTOR = np.zeros((3))
 
 
 class SkeletonVisualization(ComponentBase):
@@ -60,10 +60,9 @@ class SkeletonVisualization(ComponentBase):
     def set_skeleton(self, skeleton, visualize=True, width_scale=None):
         if width_scale is None:
             min_p, max_p = skeleton.get_bounding_box()
-            assert np.all(np.abs(max_p-min_p) <  1000)
             height = (max_p[1] - min_p[1])
+            #width_scale * DEFAULT_BOX_SIZE = height/DEFAULT_WIDTH_FACTOR
             width_scale = height/(DEFAULT_WIDTH_FACTOR*DEFAULT_BOX_SIZE)
-            print("guess width")
         self.visualize = visualize
         self.skeleton = skeleton
         self._joints = skeleton.animated_joints
@@ -169,10 +168,10 @@ class SkeletonVisualization(ComponentBase):
         return
 
     def getPosition(self):
-        if len(self.matrices) > 0:
+        if len(self.matrices) > 0 and self.matrices[0] is not None:
             return self.matrices[0][:3,3]
         else:
-            return self.scene_object.getPosition()
+            return ZERO_VECTOR
 
     def get_bone_matrices(self):
         return self.matrices
