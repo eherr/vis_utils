@@ -22,6 +22,7 @@
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 import os
 import numpy as np
+from anim_utils.animation_data import BVHReader, MotionVector, SkeletonBuilder   
 from vis_utils.graphics import materials
 from vis_utils.scene.scene_object_builder import SceneObjectBuilder, SceneObject
 from vis_utils.scene.components import StaticMesh, GeometryDataComponent, TerrainComponent, LightComponent
@@ -34,6 +35,8 @@ try:
 except:
     print("Info: failed to import gltf library")
     pass
+
+
 
 
 def load_collada_file(builder, file_path):
@@ -132,7 +135,7 @@ def load_unity_constraints(builder, file_path, radius=1, material=materials.gree
         builder._scene.addObject(scene_object)
 
 
-def load_fbx_file(builder, file_path, scale=1.0, visualize=True,  load_skeleton=True):
+def load_fbx_model(builder, file_path, scale=1.0, visualize=True,  load_skeleton=True):
     model_data = load_model_from_fbx_file(file_path)
     if model_data is None:
         return None
@@ -144,6 +147,7 @@ def load_fbx_file(builder, file_path, scale=1.0, visualize=True,  load_skeleton=
         scene_object = builder.create_object("static_mesh", name, model_data, scale)
     builder._scene.addObject(scene_object)
     return scene_object
+
 
 
 def load_gltf_file(builder, file_path, scale=1.0, visualize=True,  load_skeleton=True):
@@ -163,6 +167,5 @@ SceneObjectBuilder.register_object("mesh_list", create_static_mesh)
 SceneObjectBuilder.register_file_handler("obj", load_mesh_from_obj_file)
 SceneObjectBuilder.register_file_handler("dae", load_collada_file)
 SceneObjectBuilder.register_file_handler("_constraints.json", load_unity_constraints)
-SceneObjectBuilder.register_file_handler("fbx", load_fbx_file)
 SceneObjectBuilder.register_file_handler("gltf", load_gltf_file)
 SceneObjectBuilder.register_file_handler("glb", load_gltf_file)

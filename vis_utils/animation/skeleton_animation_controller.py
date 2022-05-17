@@ -32,7 +32,7 @@ from vis_utils.io import load_model_from_fbx_file, load_json_file
 from vis_utils.scene.utils import get_random_color
 from anim_utils.animation_data import BVHReader, BVHWriter, MotionVector, parse_amc_file
 from anim_utils.retargeting import retarget_from_src_to_target, retarget_from_point_cloud_to_target
-from vis_utils.io.fbx_io import export_motion_vector_to_fbx_file
+from anim_utils.animation_data.fbx import export_motion_vector_to_fbx_file
 from anim_utils.animation_data.motion_state import MotionState
 from .skeleton_mirror_component import SkeletonMirrorComponent
 
@@ -318,8 +318,6 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
                     print("frames shape", frames.shape)
                 else:
                     print("frames is none")
-
-
                 print("ref framee length",skeleton.reference_frame_length)
                 joint_count = 0
                 for joint_name in skeleton.nodes.keys():

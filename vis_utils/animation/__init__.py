@@ -36,6 +36,7 @@ from ..scene.scene_object_builder import SceneObjectBuilder, SceneObject
 from ..scene.utils import get_random_color
 from anim_utils.animation_data import BVHReader, MotionVector, SkeletonBuilder, parse_asf_file
 from vis_utils.io.constraints import ConstraintsFormatReader
+from anim_utils.animation_data.fbx import load_skeleton_and_animations_from_fbx
 
 DEFAULT_POINT_CLOUD_SKELETON = collections.OrderedDict([('Head', {'parent': 'Neck', 'index': 0}),
                                                         ('Neck', {'parent': 'Spine', 'index': 1}),
@@ -428,7 +429,14 @@ def load_point_cloud_animation_collection(builder, file_path):
 def load_coordinate_error_format(builder, filename):
     ConstraintsFormatReader(builder._scene).loadCoordinateErrorFormat(filename)
 
-
+def load_fbx_file(builder, file_path, scale=1.0, visualize=True,  load_skeleton=True):
+    print('load', file_path)
+    skeleton, motion_vectors = load_skeleton_and_animations_from_fbx(str(file_path))
+    first_key = list(motion_vectors.keys())[0]
+    name = file_path.split("/")[-1]
+    frame_time = 1/60
+    scene_object = builder.create_object("animation_controller", name, skeleton, motion_vectors[first_key], frame_time, 2, visualize)
+    return scene_object
 
 SceneObjectBuilder.register_object("skeleton", create_skeleton_object)
 SceneObjectBuilder.register_object("fbx_skeleton_controller", create_animation_controller_from_fbx)
@@ -451,6 +459,7 @@ SceneObjectBuilder.register_file_handler("_m.json", load_custom_unity_format_fil
 SceneObjectBuilder.register_file_handler("panim_collection", load_point_cloud_animation_collection)
 SceneObjectBuilder.register_file_handler("cee", load_coordinate_error_format)
 SceneObjectBuilder.register_file_handler("asf",load_asf_file)
+SceneObjectBuilder.register_file_handler("fbx", load_fbx_file)
 
 
 

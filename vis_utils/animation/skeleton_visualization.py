@@ -163,6 +163,7 @@ class SkeletonVisualization(ComponentBase):
         self.skeleton.scale(scale_factor)
         self.debug_skeleton = DebugSkeletonRenderer(self.skeleton, self._joints, self.color)
         self._create_shapes(scale_factor)
+        return self.skeleton
 
     def update(self, dt):
         return
