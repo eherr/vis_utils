@@ -310,29 +310,29 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
     def export_to_file(self, filename, export_format="bvh", frame_range=None):
         if self._motion is not None:
             frame_time = self._motion.get_frame_time()
+            skeleton = self.skeleton
+            frames = self._motion.get_frames()
+            frames = np.array(frames)
+            print("ref frame length",skeleton.reference_frame_length)
+            joint_count = 0
+            for joint_name in skeleton.nodes.keys():
+                if len(skeleton.nodes[joint_name].children) > 0 and "EndSite" not in joint_name:
+                    joint_count+=1
+            skeleton.reference_frame_length = joint_count * 4 + 3
+            frames = skeleton.add_fixed_joint_parameters_to_motion(frames)
             if export_format == "bvh":
-                skeleton = self.skeleton
-                frames = self._motion.get_frames()
-                frames = np.array(frames)
-                if frames is not None:
-                    print("frames shape", frames.shape)
-                else:
-                    print("frames is none")
-                print("ref framee length",skeleton.reference_frame_length)
-                joint_count = 0
-                for joint_name in skeleton.nodes.keys():
-                    if len(skeleton.nodes[joint_name].children) > 0 and "EndSite" not in joint_name:
-                        joint_count+=1
-                skeleton.reference_frame_length = joint_count * 4 + 3
-                frames = skeleton.add_fixed_joint_parameters_to_motion(frames)
                 if frame_range is not None:
                     bvh_writer = BVHWriter(None, skeleton, frames[frame_range[0]:frame_range[1],:], frame_time, True)
                 else:
                     bvh_writer = BVHWriter(None, skeleton, frames, frame_time, True)
                 bvh_writer.write(filename)
             elif export_format == "fbx":
+                mv = MotionVector(skeleton)
+                mv.frames = frames
+                mv.n_frames = len(frames)
+                mv.frame_time = frame_time
                 export_motion_vector_to_fbx_file(self.skeleton,
-                                                 self._motion, filename)
+                                                 mv, filename)
             elif export_format == "json":
                 self.skeleton.save_to_json(filename)
             else:
