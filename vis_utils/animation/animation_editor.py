@@ -691,7 +691,12 @@ class AnimationEditorBase(object):
         ground_contacts = self.detect_ground_contacts(soruce_ground_height)
         self.apply_foot_constraints(ground_contacts, target_ground_height)
 
+    def scale_frames(self, scale):
+        motion = self.get_motion()
+        motion.frames = np.array(motion.frames)
+        motion.frames[:,:3] *= scale
 
+        
 class AnimationEditor(AnimationEditorBase, ComponentBase):
     def __init__(self, scene_object):
         ComponentBase.__init__(self, scene_object)
