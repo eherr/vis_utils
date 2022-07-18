@@ -147,7 +147,7 @@ def flip_custom_coordinate_system_legs(q):
     return q
 
 def flip_custom_coordinate_system(q):
-    conv_m = np.array([[1, 0, 0, 0],
+    conv_m = np.array([[-1, 0, 0, 0],
                        [0, 1, 0, 0],
                        [0, 0, 1, 0],
                        [0, 0, 0, 1]])
@@ -322,23 +322,27 @@ class AnimationEditorBase(object):
     def __init__(self, skeleton, motion_vector, ik_settings=IK_SETTINGS, footplant_settings=FOOTPLANT_SETTINGS):
         self.skeleton = skeleton
         self.motion_vector = motion_vector
+        self.motion_vector.frames = np.array(motion_vector.frames)
         self.motion_backup = None
         self.constraints = []
         self.ik_settings = ik_settings
         self.footplant_settings = footplant_settings
-        self.motion_editing = MotionEditing(self.skeleton, self.ik_settings)
-        
-        if skeleton.skeleton_model is not None and "joint_constraints" in skeleton.skeleton_model:
-            self.motion_editing.add_constraints_to_skeleton(skeleton.skeleton_model["joint_constraints"])
-        self.edit_stash = list()
-        self.command_history = list()
-        self.foot_joints = []
-        self.set_foot_joints()
-        self.motion_grounding = MotionGrounding(self.skeleton, self.ik_settings, self.skeleton.skeleton_model, use_analytical_ik=True)
-        if self.motion_grounding.initialized:
-            self.foot_constraint_generator = FootplantConstraintGenerator(self.skeleton, self.footplant_settings, None)
-        else:
-            self.foot_constraint_generator = None
+        try:
+            self.motion_editing = MotionEditing(self.skeleton, self.ik_settings)
+            
+            if skeleton.skeleton_model is not None and "joint_constraints" in skeleton.skeleton_model:
+                self.motion_editing.add_constraints_to_skeleton(skeleton.skeleton_model["joint_constraints"])
+            self.edit_stash = list()
+            self.command_history = list()
+            self.foot_joints = []
+            self.set_foot_joints()
+            self.motion_grounding = MotionGrounding(self.skeleton, self.ik_settings, self.skeleton.skeleton_model, use_analytical_ik=True)
+            if self.motion_grounding.initialized:
+                self.foot_constraint_generator = FootplantConstraintGenerator(self.skeleton, self.footplant_settings, None)
+            else:
+                self.foot_constraint_generator = None
+        except:
+            self.close()
 
     def set_foot_joints(self):
         self.foot_joints = []
@@ -513,7 +517,6 @@ class AnimationEditorBase(object):
 
     def translate_frames(self, offset, frame_range=None):
         motion = self.get_motion()
-        motion.frames = np.array(motion.frames)
         if frame_range is None:
             start_frame = 0
             end_frame = motion.n_frames
@@ -528,7 +531,6 @@ class AnimationEditorBase(object):
 
     def rotate_frames(self, euler, frame_range=None):
         motion = self.get_motion()
-        motion.frames = np.array(motion.frames)
         if frame_range is None:
             start_frame = 0
             end_frame = motion.n_frames
@@ -544,6 +546,11 @@ class AnimationEditorBase(object):
             old_q = motion.frames[idx, 3:7]
             motion.frames[idx, :3] = np.dot(delta_m, old_t)[:3]
             motion.frames[idx, 3:7] = quaternion_multiply(delta_q, old_q)
+
+    def scale_frames(self, s):
+        motion = self.get_motion()
+        self.motion_backup = np.array(motion.frames[:])
+        motion.frames[:, :3] *= s
 
     def apply_joint_rotation_offset(self, joint_name, euler, frame_range=None, blend_window_size=None):
         motion = self.get_motion()
