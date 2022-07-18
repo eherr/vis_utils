@@ -68,8 +68,8 @@ class BoundigBox(object):
 class Camera(object):
     def __init__(self):
         self.viewMatrix = np.eye(4)
-        self.projectionMatrix = np.eye(4)
-        self.orthographMatrix = np.eye(4)
+        self.perspective_proj_matrix = np.eye(4)
+        self.ortho_proj_matrix = np.eye(4)
         self.aspect = 0
         self.near = 0
         self.far = 0
