@@ -171,7 +171,7 @@ class MultiResolutionScreenFramebuffer(object):
         glBindTexture(GL_TEXTURE_2D, self.screen_texture)
         img_data = glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE)
         glBindTexture(GL_TEXTURE_2D, 0)
-        image = Image.new("A", (self.width, self.height))
+        image = Image.new("RGBA", (self.width, self.height))
         image.frombytes(img_data)
         return image
 
