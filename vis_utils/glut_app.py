@@ -224,10 +224,10 @@ class GLUTApp(object):
             self.scene.global_vars["step"] += 1
 
     def save_screenshot(self, filename="framebuffer.png"):
-        self.graphics_context.frame_buffer.save_to_file(filename)
+        self.graphics_context.save_screenshot(filename)
 
     def get_screenshot(self):
-        return self.graphics_context.frame_buffer.to_image()
+        return self.graphics_context.get_screenshot()
 
     def set_console_lines(self, lines):
         self.graphics_context.console.set_lines(lines)

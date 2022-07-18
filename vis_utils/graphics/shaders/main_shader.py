@@ -144,7 +144,6 @@ float calculateShadow(sampler2D shadowMap, vec4 fragPosLightSpace, vec3 lightDir
     vec3 normal = normalize(fragNormal);
     //vec3 lightDir = normalize(lightPos - fragVert);
     float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);//0.05 0.005
-    //float bias = 0.0005;
     // check whether current frag pos is in shadow
     // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
     // PCF
@@ -240,7 +239,6 @@ void main()
         }
         if (bool(useShadow)){
             float shadow = calculateShadow(lights[i].shadowMap, shadowCoord[i], lightDir);
-            //visibility = shadow ? 0.5 : 1.0;
             visibility = 1.0-shadow;
         }
 
@@ -256,7 +254,6 @@ void main()
         diffuseSum += visibility * diffuseLightColor;
         specularSum += visibility * specularLightColor;
     }
-    //color = vec4( ambient+lightSum,1.0);
     diffuseSum = clamp(diffuseSum,0,1) * surfaceColor.rgb;
     specularSum = clamp(specularSum,0,1)* material.specular_color;
     color = vec4(ambient+clamp(diffuseSum+specularSum,0,1),1.0);

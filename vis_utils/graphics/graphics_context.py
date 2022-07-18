@@ -72,6 +72,7 @@ class GraphicsContext(object):
         PrimitiveManager().init()
         self.use_shadows =  kwargs.get("use_shadows", True)
         self.use_frame_buffer = kwargs.get("use_frame_buffer", True)
+        self.frame_buffer = None
         if self.use_frame_buffer:
             self.frame_buffer = MultiResolutionScreenFramebuffer(w,h, 4)
             #self.frame_buffer = ScreenFramebuffer(800, 600)
@@ -289,3 +290,12 @@ class GraphicsContext(object):
         self.imgui_renderer.render(data)
         imgui.end_frame()
 
+    def save_screenshot(self, filename):
+        if  self.frame_buffer is None:
+            return
+        self.frame_buffer.save_to_file(filename)
+
+    def get_screenshot(self):
+        if  self.frame_buffer is None:
+            return
+        return self.frame_buffer.to_image()
