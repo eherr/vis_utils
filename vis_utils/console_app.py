@@ -34,9 +34,11 @@ DEFAULT_FPS = 60
 
 
 class ConsoleApp(object):
-    def __init__(self,  fps=DEFAULT_FPS, sim_settings=None, sync_sim=True, sim_dt=DEFAULT_SIM_DT):
-        self.maxfps = fps
-        self.sim_dt = sim_dt
+    def __init__(self, **kwargs):
+        self.maxfps = kwargs.get("fps",DEFAULT_FPS)  
+        sim_settings = kwargs.get("sim_settings", None)
+        sync_sim = kwargs.get("sync_sim", True)
+        self.sim_dt = kwargs.get("sim_dt",DEFAULT_SIM_DT) 
         self.interval = 1.0/self.maxfps
         if sim_settings is None:
             sim_settings = dict()

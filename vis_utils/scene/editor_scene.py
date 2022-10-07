@@ -55,13 +55,14 @@ def load_json_file(file_path):
 class EditorScene(Scene):
     """class for scenes that are supposed to be visualized """
 
-    def __init__(self, visualize=True, sim=None):
+    def __init__(self, visualize=True, sim=None, **kwargs):
         Scene.__init__(self, visualize, sim)
         self.added_scene_object = Signal()
         self.updated_animation_frame = Signal()
         self.reached_end_of_animation = Signal()
         self.deleted_scene_object = Signal()
         self.update_scene_object = Signal()
+        self.create_ground = kwargs.get("create_ground", True)
         if self.visualize:
             self._create_visual_reference_frame()
             if constants.activate_simulation:
@@ -81,6 +82,8 @@ class EditorScene(Scene):
     def _create_visual_reference_frame(self, scale=1):
         self.add_directional_light(scale)
         self.addObject(CoordinateSystemObject(10))
+        if not self.create_ground:
+            return
         self.ground = SceneObject()
         self.ground.clickable = False
         diffuse_texture = Texture()

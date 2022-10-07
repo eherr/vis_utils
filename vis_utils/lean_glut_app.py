@@ -42,9 +42,14 @@ if constants.activate_simulation:
     from physics_utils.sim import SimWorld
 
 class LeanGLUTApp(object):
-    def __init__(self, width, height, title="GLUTApp", console_scale=0.5, camera_pose=None,
-                 maxfps=60, sim_settings=None, sync_sim=True,clear_color=DEFAULT_CLEAR_COLOR):
-        self.maxfps = maxfps
+    def __init__(self, width, height, title="GLUTApp", **kwargs):
+        self.maxfps = kwargs.get("maxfps",60)  
+        self.sim_dt = kwargs.get("sim_dt",1.0/200) 
+        self.clear_color = kwargs.get("clear_color", DEFAULT_CLEAR_COLOR)
+        camera_pose = kwargs.get("camera_pose", None)
+        sim_settings = kwargs.get("sim_settings", None)
+        console_scale = kwargs.get("console_scale", 0.5)
+        sync_sim = kwargs.get("sync_sim", True)
         self.interval = 1.0/self.maxfps
         self.width = width
         self.height = height
@@ -96,7 +101,7 @@ class LeanGLUTApp(object):
         self.plot_manager = PlotManager(self.width, self.height)
         self.draw_plot = True
         self.fixed_dt = True
-        self.clear_color = clear_color
+        self.clear_color = self.clear_color
         imgui.create_context()
         self.imgui_renderer = ProgrammablePipelineRenderer()
         self.io = imgui.get_io()

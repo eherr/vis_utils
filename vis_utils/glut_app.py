@@ -89,10 +89,14 @@ MOUSE_BUTTON_STATE_UP = 1
 
 
 class GLUTApp(object):
-    def __init__(self, width, height, title="GLUTApp", camera_pose=None, maxfps=60, sim_settings=None,
-                 sync_sim=True, use_shadows=True, use_frame_buffer=True, clear_color=DEFAULT_CLEAR_COLOR, sim_dt=1.0/200):
-        self.maxfps = maxfps
-        self.sim_dt = sim_dt
+    def __init__(self, width, height, title="GLUTApp", **kwargs):
+        self.maxfps = kwargs.get("maxfps",60)  
+        self.sim_dt = kwargs.get("sim_dt",1.0/200) 
+        self.clear_color = kwargs.get("clear_color", DEFAULT_CLEAR_COLOR)
+        self.use_shadows =  kwargs.get("use_shadows", True)
+        self.use_frame_buffer = kwargs.get("use_frame_buffer", True)
+        camera_pose = kwargs.get("camera_pose", None)
+        sim_settings = kwargs.get("sim_settings", None)
         self.interval = 1.0/self.maxfps
         self.width = width
         self.height = height
@@ -113,11 +117,10 @@ class GLUTApp(object):
         glutDisplayFunc(self.update)
         glutKeyboardFunc(self.keyboard)
         glutKeyboardFunc(self.keyboard)
-
         if sim_settings is None:
             sim_settings = dict()
         self.sim_settings = sim_settings
-        self.graphics_context = GraphicsContext(width, height, sky_color=clear_color)
+        self.graphics_context = GraphicsContext(width, height, sky_color=self.clear_color)
 
         sim = None
         if constants.activate_simulation:
@@ -125,8 +128,7 @@ class GLUTApp(object):
             self.sim_settings["engine"] = "ode"
             self.sim_settings["add_ground"] = True
             sim = SimWorld(**self.sim_settings)
-        self.scene = EditorScene(True, sim=sim)
-
+        self.scene = EditorScene(True, sim=sim, **kwargs)
         self.camera_controller = CameraController(self.graphics_context.camera, camera_pose)
 
         glutMouseFunc(self.mouse_click)
@@ -139,14 +141,11 @@ class GLUTApp(object):
         self.next_time = self.last_time+self.interval
         self.scene.global_vars["step"] = 0
         self.scene.global_vars["fps"] = self.maxfps
+        sync_sim = kwargs.get("sync_sim", True)
         self.synchronize_simulation = sync_sim and self.scene.sim is not None
         self.last_click_position = np.zeros(3)
         self.mutex = threading.Lock()
         self.synchronize_updates = True
-        self.enable_object_selection = False
-        self.clear_color = clear_color
-        self.use_shadows = use_shadows
-        self.use_frame_buffer = use_frame_buffer
         self.reshape(width, height)
         self.visualize = True
         self.fixed_dt = False
@@ -223,7 +222,7 @@ class GLUTApp(object):
             step_idx += 1
             self.scene.global_vars["step"] += 1
 
-    def save_screenshot(self, filename="framebuffer.png"):
+    def save_screenshot(self, filename):
         self.graphics_context.save_screenshot(filename)
 
     def get_screenshot(self):
