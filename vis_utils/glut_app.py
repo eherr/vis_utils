@@ -127,7 +127,7 @@ class GLUTApp(AppBase):
         self.is_running = False
         self.enable_object_selection = False
 
-    def init_graphics_context(self, width, height, title, camera_pose, **kwargs):
+    def init_graphics_context(self, width, height, title, **kwargs):
         glutInit(sys.argv)
         # needed for the console which uses font functions of pygame
         pygame.init()
