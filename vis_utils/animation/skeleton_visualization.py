@@ -169,10 +169,10 @@ class SkeletonVisualization(ComponentBase):
         return
 
     def getPosition(self):
-        if len(self.matrices) > 0 and self.matrices[0] is not None:
+        if len(self.matrices) > 0:
             return self.matrices[0][:3,3]
         else:
-            return ZERO_VECTOR
+            return self.scene_object.getPosition()
 
     def get_bone_matrices(self):
         return self.matrices

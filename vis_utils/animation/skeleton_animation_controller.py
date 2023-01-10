@@ -166,16 +166,20 @@ class SkeletonAnimationController(SkeletonAnimationControllerBase):
         """
         if not self.isLoadedCorrectly():
             return
+        if not self._motion.play:
+            return
         reset = self._motion.update(dt*self.animationSpeed)
-        if self._motion.play:
-            self.updateTransformation()
-            # update gui
-            if reset:
-                self.reached_end_of_animation.emit(self.loopAnimation)
-                self._motion.play = self.loopAnimation
-            else:
-                if self.activate_emit:
-                    self.updated_animation_frame.emit(self._motion.get_current_frame_idx())
+        self.updateTransformation()
+        if reset:
+            self._motion.play = self.loopAnimation
+        if self.activate_emit:
+            self.update_gui(reset)
+
+    def update_gui(self, reset):
+        if reset:
+            self.reached_end_of_animation.emit(self.loopAnimation)
+        else:
+            self.updated_animation_frame.emit(self._motion.get_current_frame_idx())
 
     def draw(self, modelMatrix, viewMatrix, projectionMatrix, lightSources):
         if self.isLoadedCorrectly():
