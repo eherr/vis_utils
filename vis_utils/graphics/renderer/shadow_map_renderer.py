@@ -71,8 +71,8 @@ class ShadowMapRenderer(Renderer):
                     self.upload_bone_matrices(bone_matrices)  # bone matrices once
                     for geom in o._components["animated_mesh"].meshes:
                         self.render(o.transformation, geom, l)
-                if "character" in o._components and o._components["character"].visible:
-                    char = o._components["character"]
+                if "articulated_figure" in o._components and o._components["articulated_figure"].visible:
+                    char = o._components["articulated_figure"]
                     for key, geom in char.body_shapes.items():
                         model_matrix = char.articulated_figure.bodies[key].get_transformation()
                         self.render(model_matrix, geom, l)
