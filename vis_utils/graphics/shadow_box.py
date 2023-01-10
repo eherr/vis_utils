@@ -231,8 +231,11 @@ class ShadowBox(object):
         far = self.shadow_box_length
         far_width = far * tan_fov
         near_width = camera.near * tan_fov
-        far_height = far_width / camera.aspect
-        near_height = near_width / camera.aspect
+        far_height = 0
+        near_height = 0
+        if camera.aspect > 0:
+            far_height = far_width / camera.aspect
+            near_height = near_width / camera.aspect
         return far_width, near_width, far_height, near_height
 
 
