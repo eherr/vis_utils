@@ -52,6 +52,8 @@ class AppBase:
         self.synchronize_simulation = False
 
     def init_simulation(self):
+        if self.sim_settings is None:
+            self.sim_settings = dict()
         self.sim_settings["auto_disable"] = False
         if "engine" not in self.sim_settings:
             self.sim_settings["engine"] = "ode"
