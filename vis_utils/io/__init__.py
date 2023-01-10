@@ -22,13 +22,12 @@
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 import os
 import numpy as np
-from anim_utils.animation_data import BVHReader, MotionVector, SkeletonBuilder   
 from vis_utils.graphics import materials
 from vis_utils.scene.scene_object_builder import SceneObjectBuilder, SceneObject
-from vis_utils.scene.components import StaticMesh, GeometryDataComponent, TerrainComponent, LightComponent
+from vis_utils.scene.components import StaticMesh, GeometryDataComponent
 from vis_utils.graphics.geometry.mesh import Mesh
-from .utils import load_json_file, save_json_file, load_latest_json_file
-from .obj_format import load_mesh_from_ob_file, load_materials_from_mtl_file, load_obj_file
+from .utils import load_json_file, save_json_file
+from .obj_format import load_obj_file
 from .fbx_format import load_model_from_fbx_file
 try:
     from .gltf import load_model_from_gltf_file
