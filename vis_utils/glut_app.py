@@ -101,9 +101,7 @@ class GLUTApp(AppBase):
         AppBase.__init__(self, maxfps=maxfps, sim_dt=sim_dt, sim_settings=sim_settings)
         
         sync_sim=kwargs.get("sync_sim",True)
-        use_shadows=kwargs.get("use_shadows",True)
-        use_frame_buffer=kwargs.get("use_frame_buffer",True)
-        clear_color=kwargs.get("clear_color",DEFAULT_CLEAR_COLOR)
+        self.use_frame_buffer=kwargs.get("use_frame_buffer",True)
         activate_simulation=kwargs.get("activate_simulation",True)
         up_axis=kwargs.get("up_axis",1)
         self.width = width
@@ -124,9 +122,6 @@ class GLUTApp(AppBase):
         self.scene.global_vars["fps"] = self.maxfps
         self.synchronize_simulation = sync_sim and self.scene.sim is not None
         self.last_click_position = np.zeros(3)
-        self.clear_color = clear_color
-        self.use_shadows = use_shadows
-        self.use_frame_buffer = use_frame_buffer
         if visualize:
             self.reshape(width, height)
         self.is_running = False
