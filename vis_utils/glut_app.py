@@ -32,6 +32,10 @@ from .scene.editor_scene import EditorScene
 from .graphics.graphics_context import GraphicsContext
 from .app_base import AppBase, DEFAULT_CLEAR_COLOR, DEFAULT_SIM_DT, DEFAULT_FPS
 
+try:
+    import physics_utils
+except:
+    physics_utils = None
 
 
 
@@ -95,7 +99,7 @@ class GLUTApp(AppBase):
         sim_dt=kwargs.get("sim_dt",DEFAULT_SIM_DT)
         sim_settings=kwargs.get("sim_settings",None)
         AppBase.__init__(self, maxfps=maxfps, sim_dt=sim_dt, sim_settings=sim_settings)
-        camera_pose=kwargs.get("camera_pose",None)
+        
         sync_sim=kwargs.get("sync_sim",True)
         use_shadows=kwargs.get("use_shadows",True)
         use_frame_buffer=kwargs.get("use_frame_buffer",True)
@@ -105,11 +109,11 @@ class GLUTApp(AppBase):
         self.width = width
         self.height = height
         self.aspect = float(width) / float(height)
-        self.init_graphics_context(width, height, title, up_axis, camera_pose)
+        self.init_graphics_context(width, height, title, **kwargs)
 
         visualize = True
         sim = None
-        if activate_simulation:
+        if activate_simulation and physics_utils is not None:
             sim = self.init_simulation()
         self.scene = EditorScene(visualize, sim=sim, up_axis=up_axis)
         self.visualize = visualize
@@ -128,7 +132,7 @@ class GLUTApp(AppBase):
         self.is_running = False
         self.enable_object_selection = False
 
-    def init_graphics_context(self, width, height, title, up_axis, camera_pose):
+    def init_graphics_context(self, width, height, title, camera_pose, **kwargs):
         glutInit(sys.argv)
         # needed for the console which uses font functions of pygame
         pygame.init()
@@ -140,8 +144,9 @@ class GLUTApp(AppBase):
         glutReshapeFunc(self.reshape)
         glutDisplayFunc(self.update)
         glClearColor(0.0, 0.0, 0.0, 1.0)
-        self.graphics_context = GraphicsContext(width, height,up_axis=up_axis)
+        self.graphics_context = GraphicsContext(width, height, **kwargs)
         self.graphics_context.show_console = True
+        camera_pose=kwargs.get("camera_pose",None)
         self.camera_controller = CameraController(self.graphics_context.camera, camera_pose)
        
         glutKeyboardFunc(self.keyboard)

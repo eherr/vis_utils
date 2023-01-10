@@ -27,7 +27,11 @@ import queue
 import threading
 from dataclasses import dataclass, field
 from . import constants
-if constants.activate_simulation:
+try:
+    import physics_utils
+except:
+    physics_utils = None
+if constants.activate_simulation and physics_utils is not None:
     from physics_utils.sim import SimWorld
 
 DEFAULT_CLEAR_COLOR = [0,0,0]
