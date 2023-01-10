@@ -73,47 +73,64 @@ class PylabPlotter(object):
 
 
 class LinePylabPlotter(PylabPlotter):
-    def __init__(self, title, size, data_length=100000, dpi=400, font_size=8):
+    def __init__(self, title, size, data_length=1000000, dpi=400, font_size=8):
         super().__init__(title, size, dpi, font_size)
-        self.data = dict()
+        self.x_data = dict()
+        self.y_data = dict()
         self.colors = dict()
+        self.counter = dict()
         self.data_length = data_length
 
+
     def clear_data(self):
-        for key in self.data:
-            self.data[key].clear()
+        for key in self.x_data:
+            self.x_data[key].clear()
+            self.y_data[key].clear()
+            self.counter[key] = 0
 
     def add_line(self, key, color):
-        self.data[key] = deque([], self.data_length)
+        self.x_data[key] = deque([], self.data_length)
+        self.y_data[key] = deque([], self.data_length)
+        self.counter[key] = 0
         self.colors[key] = color
 
     def update_data(self, key, point):
-        if key not in self.data:
+        if key not in self.x_data:
             return
-        self.data[key].append(point)
+        if isinstance(point, tuple):
+            x = point[0]
+            y = point[1]
+        else:
+            x = self.counter[key]
+            y = point
+        self.x_data[key].append(x)
+        self.y_data[key].append(y)
+        self.counter[key]+=1
 
     def plot_data(self):
         ax = self.fig.gca()
         ax.clear()
-        for key in self.data:
+        for key in self.x_data:
             #ax.set_xticklabels(ax.get_xticklabels(), font_dict)
             #ax.set_yticklabels(ax.get_yticklabels(), font_dict)
             for label in ax.get_yticklabels():
                 label.set_fontsize(self.font_size) 
             for label in ax.get_xticklabels():
-                label.set_fontsize(self.font_size) 
-            ax.plot(self.data[key], c=self.colors[key], label=key)
+                label.set_fontsize(self.font_size)
+            x = self.x_data[key]
+            y = self.y_data[key]
+            ax.plot(x, y, c=self.colors[key], label=key)
             #plt.yticks(fontsize=self.font_size)
             #plt.xticks(fontsize=self.font_size)
-            if len(self.data) > 1:
+            if len(self.x_data) > 1:
                 ax.legend(loc='upper left', fontsize=self.font_size)
             ax.get_xaxis().set_visible(True)
             self.canvas.draw()
 
     def save_to_file(self, filename):
         max_len = 1
-        for key in self.data:
-            max_len = max(len(self.data[key]), max_len)
+        for key in self.x_data:
+            max_len = max(len(self.x_data[key]), max_len)
         scale = max_len/self.data_length
         size = [self.size[0] * scale,
                  self.size[1]]
@@ -122,8 +139,8 @@ class LinePylabPlotter(PylabPlotter):
         canvas = agg.FigureCanvasAgg(self.fig)
         ax = fig.gca()
         ax.clear()
-        for key in self.data:
-            ax.plot(self.data[key], c=self.colors[key])
+        for key in self.x_data:
+            ax.plot(self.x_data[key],self.y_data[key], c=self.colors[key])
         ax.get_xaxis().set_visible(True)
         canvas.draw()
         fig.savefig(filename+".png")

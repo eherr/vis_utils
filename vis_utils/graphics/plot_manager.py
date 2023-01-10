@@ -98,7 +98,10 @@ class PlotManager(object):
 
     def set_data(self, plot_name, key, points):
         if plot_name in self.plots:
-            self.plots[plot_name].technique.plotter.data[key] = deque(points, self.plots[plot_name].technique.plotter.data_length)
+            y = deque(points, self.plots[plot_name].technique.plotter.data_length)
+            x = deque(np.arange(0, len(y)), self.plots[plot_name].technique.plotter.data_length)
+            self.plots[plot_name].technique.plotter.y_data[key] = y
+            self.plots[plot_name].technique.plotter.x_data[key] = x
 
     def set_img_data(self, plot_name, data):
         if plot_name in self.plots:
