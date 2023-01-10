@@ -23,7 +23,6 @@
 import numpy as np
 import time
 import pygame
-import threading
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
@@ -36,26 +35,39 @@ from .graphics.geometry.primitive_manager import PrimitiveManager
 from .graphics.console import IMGUIConsole
 from .graphics.renderer.main_renderer import MainRenderer
 from .graphics.plot_manager import PlotManager
-from .glut_app import DEFAULT_CLEAR_COLOR, CameraController
-from . import constants
-if constants.activate_simulation:
-    from physics_utils.sim import SimWorld
+from .app_base import AppBase, DEFAULT_CLEAR_COLOR
+from .glut_app import CameraController
 
-class LeanGLUTApp(object):
-    def __init__(self, width, height, title="GLUTApp", **kwargs):
-        self.maxfps = kwargs.get("maxfps",60)  
-        self.sim_dt = kwargs.get("sim_dt",1.0/200) 
-        self.clear_color = kwargs.get("clear_color", DEFAULT_CLEAR_COLOR)
-        camera_pose = kwargs.get("camera_pose", None)
-        sim_settings = kwargs.get("sim_settings", None)
-        console_scale = kwargs.get("console_scale", 0.5)
-        sync_sim = kwargs.get("sync_sim", True)
-        self.interval = 1.0/self.maxfps
+
+class LeanGLUTApp(AppBase):
+    def __init__(self, width, height, title="GLUTApp", console_scale=0.5, camera_pose=None,
+                 maxfps=60, sim_settings=None, sync_sim=True,clear_color=DEFAULT_CLEAR_COLOR):
+        AppBase.__init__(self, maxfps=maxfps,sim_settings=sim_settings)
         self.width = width
         self.height = height
         self.aspect = float(width) / float(height)
-        glutInit(sys.argv)
+        self.init_graphics_context(width, height, title, camera_pose, console_scale)
+       
+        self.show_console = True
+        sim = None
+        if self.activate_simulation:
+            sim = self.init_simulation()
+        self.scene = EditorScene(True, sim=sim)
 
+        self.keyboard_handler = dict()
+        self.last_time = time.perf_counter()
+        self.next_time = self.last_time+self.interval
+        self.scene.global_vars["step"] = 0
+        self.scene.global_vars["fps"] = self.maxfps
+        self.synchronize_simulation = sync_sim
+        self.last_click_position = np.zeros(3)
+        self.synchronize_updates = True
+        self.draw_plot = True
+        self.fixed_dt = True
+        self.clear_color = clear_color
+
+    def init_graphics_context(self, width, height, title, camera_pose, console_scale):
+        glutInit(sys.argv)
         pygame.init()
         # Create a double-buffer RGBA window
         glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
@@ -74,35 +86,14 @@ class LeanGLUTApp(object):
         self.shader_manager.initShaderMap()
         self.primitive_manager = PrimitiveManager()
         self.console = IMGUIConsole([0, 0], scale=console_scale)
-        self.show_console = True
-        if sim_settings is None:
-            sim_settings = dict()
-        self.sim_settings = sim_settings
-        sim = None
-        if constants.activate_simulation:
-            self.sim_settings["auto_disable"] = False
-            self.sim_settings["engine"] = "ode"
-            self.sim_settings["add_ground"] = True
-            sim = SimWorld(**self.sim_settings)
-        self.scene = EditorScene(True, sim=sim)
         self.main_renderer = MainRenderer()
         self.camera = OrbitingCamera()
         self.camera_controller = CameraController(self.camera, camera_pose)
         glClearColor(0.0, 0.0, 0.0, 1.0)
-        self.keyboard_handler = dict()
-        self.last_time = time.perf_counter()
-        self.next_time = self.last_time+self.interval
-        self.scene.global_vars["step"] = 0
-        self.scene.global_vars["fps"] = self.maxfps
-        self.synchronize_simulation = sync_sim
-        self.last_click_position = np.zeros(3)
-        self.mutex = threading.Lock()
-        self.synchronize_updates = True
         self.plot_manager = PlotManager(self.width, self.height)
-        self.draw_plot = True
-        self.fixed_dt = True
-        self.clear_color = self.clear_color
+        # initilize imgui context (see documentation)
         imgui.create_context()
+        # imgui.get_io().fonts.get_tex_data_as_rgba32()
         self.imgui_renderer = ProgrammablePipelineRenderer()
         self.io = imgui.get_io()
         self.io.display_size = width, height
@@ -120,9 +111,10 @@ class LeanGLUTApp(object):
         if self.synchronize_updates:
             self.update_scene(dt)
         self.camera.update(dt)
-        self.render()
+        self.render(dt)
         self.next_time = self.last_time + self.interval
         self.scene.global_vars["fps"] = fps
+        #print(fps)
 
     def update_scene(self, dt):
         self.mutex.acquire()
@@ -131,13 +123,13 @@ class LeanGLUTApp(object):
         self.scene.after_update(dt)
         self.mutex.release()
 
-    def render(self):
+    def render(self, dt):
         glViewport(0, 0, self.width, self.height)
         glClearColor(self.clear_color[0],self.clear_color[1],self.clear_color[2], 255)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_TEXTURE_2D)
-        self.console.reset()
+        #self.console.reset()
         self.scene.draw(self.camera.get_view_matrix(), self.camera.get_projection_matrix())
         self.main_renderer.use_shadow = False
 
@@ -147,6 +139,7 @@ class LeanGLUTApp(object):
         light_sources = self.scene.lightSources
         self.main_renderer.render_scene(object_list, p_m, v_m, light_sources)
         self.draw_ui()
+
         glutSwapBuffers()
         glutPostRedisplay()
 
@@ -177,7 +170,7 @@ class LeanGLUTApp(object):
         self.last_click_position = self.get_position_from_click(x,y)
         io = self.io
         io.mouse_down[button] = 1-state
-
+      
     def get_position_from_click(self, x, y):
         viewport = glGetIntegerv(GL_VIEWPORT)
         wx = x
@@ -188,7 +181,7 @@ class LeanGLUTApp(object):
         p = gluUnProject(wx, wy, wz, view, proj, viewport)
         return np.array(p)
 
-    def mouse_motion(self,  x,y):
+    def mouse_motion(self, x, y):
         delta = [x,y] - self.camera_controller.last_pos
         self.camera_controller.last_pos = np.array([x,y])
         if self.camera_controller.mode == GLUT_RIGHT_BUTTON:
@@ -199,13 +192,13 @@ class LeanGLUTApp(object):
 
     def passive_mouse_motion(self, x, y):
         self.io.mouse_pos = (x,y)
-    
+
     def mouse_wheel(self,  wheel, direction, x, y):
         self.camera_controller.zoom(direction)
 
     def set_camera_target(self, scene_object):
         self.camera.setTarget(scene_object)
-    
+
     def set_console_lines(self, lines):
         self.console.set_lines(lines)
 

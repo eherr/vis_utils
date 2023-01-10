@@ -39,10 +39,17 @@ BIAS_MATRIX = np.array([[0.5, 0.0, 0.0, 0.0],
                         [0.5, 0.5, 0.5, 1.0]
                         ])# transform homogenous to texture coordinates
 
+DEFAULT_SHADOW_BOX_LENGTH = 500
+
 class DirectionalLight(object):
-    def __init__(self, position, target, up_vector, intensities, w=4096, h=4096, scene_scale=1, shadow_box_length=500):
+    def __init__(self, position, target, up_vector, intensities, w=4096, h=4096, scene_scale=1, shadow_box_length=DEFAULT_SHADOW_BOX_LENGTH):
         #w*=4
         #h*=4
+        scene_scale = 0.1
+        #w *= 4
+        #h *= 4
+        shadow_box_length *= scene_scale
+        position = np.array(position, dtype=np.float32)
         self.up_vector = up_vector
         self.target = target
         self._dir = (target-position)

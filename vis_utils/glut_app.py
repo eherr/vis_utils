@@ -25,15 +25,19 @@ import numpy as np
 import time
 import pygame
 import math
-import threading
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from .scene.editor_scene import EditorScene
 from .graphics.graphics_context import GraphicsContext
-from . import constants
-if constants.activate_simulation:
-    from physics_utils.sim import SimWorld
+from .app_base import AppBase, DEFAULT_CLEAR_COLOR, DEFAULT_SIM_DT, DEFAULT_FPS
+
+
+
+
+LEFT_MOUSE_BUTTON = 0
+MOUSE_BUTTON_STATE_DOWN = 0
+MOUSE_BUTTON_STATE_UP = 1
 
 
 class CameraController(object):
@@ -63,7 +67,7 @@ class CameraController(object):
 
     def move(self, delta):
         self.camera.moveHorizontally(-delta[0] * self.translation_scale * 2)
-        self.camera.position[1] -= delta[1] * self.translation_scale
+        self.camera.moveVertically(-delta[1] * self.translation_scale )
 
     def mouse_motion(self, x, y):
         delta = [x, y] - self.last_pos
@@ -81,28 +85,51 @@ class CameraController(object):
     def mouse_wheel(self, wheel, direction, x, y):
         self.zoom(direction)
 
-
-DEFAULT_CLEAR_COLOR = [0,0,0]
-LEFT_MOUSE_BUTTON = 0
-MOUSE_BUTTON_STATE_DOWN = 0
-MOUSE_BUTTON_STATE_UP = 1
+    def move_to(self, pos):
+        return
 
 
-class GLUTApp(object):
+class GLUTApp(AppBase):
     def __init__(self, width, height, title="GLUTApp", **kwargs):
-        self.maxfps = kwargs.get("maxfps",60)  
-        self.sim_dt = kwargs.get("sim_dt",1.0/200) 
-        self.clear_color = kwargs.get("clear_color", DEFAULT_CLEAR_COLOR)
-        self.use_shadows =  kwargs.get("use_shadows", True)
-        self.use_frame_buffer = kwargs.get("use_frame_buffer", True)
-        camera_pose = kwargs.get("camera_pose", None)
-        sim_settings = kwargs.get("sim_settings", None)
-        self.interval = 1.0/self.maxfps
+        maxfps=kwargs.get("maxfps",DEFAULT_FPS)
+        sim_dt=kwargs.get("sim_dt",DEFAULT_SIM_DT)
+        sim_settings=kwargs.get("sim_settings",None)
+        AppBase.__init__(self, maxfps=maxfps, sim_dt=sim_dt, sim_settings=sim_settings)
+        camera_pose=kwargs.get("camera_pose",None)
+        sync_sim=kwargs.get("sync_sim",True)
+        use_shadows=kwargs.get("use_shadows",True)
+        use_frame_buffer=kwargs.get("use_frame_buffer",True)
+        clear_color=kwargs.get("clear_color",DEFAULT_CLEAR_COLOR)
+        activate_simulation=kwargs.get("activate_simulation",True)
+        up_axis=kwargs.get("up_axis",1)
         self.width = width
         self.height = height
         self.aspect = float(width) / float(height)
-        glutInit(sys.argv)
+        self.init_graphics_context(width, height, title, up_axis, camera_pose)
 
+        visualize = True
+        sim = None
+        if activate_simulation:
+            sim = self.init_simulation()
+        self.scene = EditorScene(visualize, sim=sim, up_axis=up_axis)
+        self.visualize = visualize
+        self.keyboard_handler = dict()
+        self.last_time = time.perf_counter()
+        self.next_time = self.last_time+self.interval
+        self.scene.global_vars["step"] = 0
+        self.scene.global_vars["fps"] = self.maxfps
+        self.synchronize_simulation = sync_sim and self.scene.sim is not None
+        self.last_click_position = np.zeros(3)
+        self.clear_color = clear_color
+        self.use_shadows = use_shadows
+        self.use_frame_buffer = use_frame_buffer
+        if visualize:
+            self.reshape(width, height)
+        self.is_running = False
+        self.enable_object_selection = False
+
+    def init_graphics_context(self, width, height, title, up_axis, camera_pose):
+        glutInit(sys.argv)
         # needed for the console which uses font functions of pygame
         pygame.init()
         # Create a double-buffer RGBA window. 
@@ -110,83 +137,24 @@ class GLUTApp(object):
 
         glutInitWindowSize(width, height)
         glutCreateWindow(str.encode(title))
-
-        #wglSwapIntervalEXT(0) disable vsync
-
         glutReshapeFunc(self.reshape)
         glutDisplayFunc(self.update)
-        glutKeyboardFunc(self.keyboard)
-        glutKeyboardFunc(self.keyboard)
-        if sim_settings is None:
-            sim_settings = dict()
-        self.sim_settings = sim_settings
-        self.graphics_context = GraphicsContext(width, height, sky_color=self.clear_color)
-
-        sim = None
-        if constants.activate_simulation:
-            self.sim_settings["auto_disable"] = False
-            self.sim_settings["engine"] = "ode"
-            self.sim_settings["add_ground"] = True
-            sim = SimWorld(**self.sim_settings)
-        self.scene = EditorScene(True, sim=sim, **kwargs)
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        self.graphics_context = GraphicsContext(width, height,up_axis=up_axis)
+        self.graphics_context.show_console = True
         self.camera_controller = CameraController(self.graphics_context.camera, camera_pose)
-
+       
+        glutKeyboardFunc(self.keyboard)
         glutMouseFunc(self.mouse_click)
         glutMotionFunc(self.mouse_motion)
         glutPassiveMotionFunc(self.passive_mouse_motion)
         glutMouseWheelFunc(self.mouse_wheel)
-        glClearColor(0.0, 0.0, 0.0, 1.0)
-        self.keyboard_handler = dict()
-        self.last_time = time.perf_counter()
-        self.next_time = self.last_time+self.interval
-        self.scene.global_vars["step"] = 0
-        self.scene.global_vars["fps"] = self.maxfps
-        sync_sim = kwargs.get("sync_sim", True)
-        self.synchronize_simulation = sync_sim and self.scene.sim is not None
-        self.last_click_position = np.zeros(3)
-        self.mutex = threading.Lock()
-        self.synchronize_updates = True
-        self.reshape(width, height)
-        self.visualize = True
-        self.fixed_dt = False
-        self.is_running = False
-        self.enable_object_selection = False
 
-    def update(self):
-        t = time.perf_counter()
-        if self.fixed_dt:
-            dt = self.interval
-        else:
-            while t < self.next_time:
-                st = self.next_time - t
-                time.sleep(st)
-                t = time.perf_counter()
-            dt = t - self.last_time
-        self.last_time = t
-        fps= 1.0/dt
-        if self.synchronize_updates:
-            self.update_scene(dt)
+
+    def render(self, dt):
         self.graphics_context.update(dt)
-        self.render()
-        self.next_time = self.last_time + self.interval
-        self.scene.global_vars["fps"] = fps
-
-    def update_scene(self, dt):
-        self.mutex.acquire()
-        self.scene.before_update(dt)
-        if self.synchronize_simulation:
-            # from locotest
-            sim_seconds = dt
-            n_steps = int(math.ceil(sim_seconds / self.sim_dt))
-            for i in range(0, n_steps):
-                self.scene.sim_update(self.sim_dt)
-                self.scene.global_vars["step"] += 1
-        self.scene.update(dt)
-        self.scene.after_update(dt)
-        self.mutex.release()
-
-    def render(self):
         self.graphics_context.render(self.scene)
+
         glutSwapBuffers()
         glutPostRedisplay()
 
@@ -215,12 +183,6 @@ class GLUTApp(object):
     def set_camera_target(self, scene_object):
         self.graphics_context.camera.setTarget(scene_object)
 
-    def step_sim(self, n_steps=1):
-        step_idx = 0
-        while step_idx < n_steps:
-            self.scene.sim_update(self.sim_dt)
-            step_idx += 1
-            self.scene.global_vars["step"] += 1
 
     def save_screenshot(self, filename):
         self.graphics_context.save_screenshot(filename)
@@ -230,12 +192,6 @@ class GLUTApp(object):
 
     def set_console_lines(self, lines):
         self.graphics_context.console.set_lines(lines)
-
-    def get_sim_steps_per_update(self):
-        if self.interval > self.sim_dt:
-            return np.floor(self.interval/self.sim_dt)
-        else:
-            return 1
 
     def mouse_click(self, button, state, x, y):
         self.camera_controller.mouse(button, state, x, y)

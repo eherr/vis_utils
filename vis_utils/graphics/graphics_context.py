@@ -42,6 +42,7 @@ from ..graphics.console import IMGUIConsole
 from ..graphics.renderer.label_renderer import LabelRenderer
 
 DEFAULT_SKY_COLOR = [0,0,0]
+DEFAULT_SKY_COLOR = [0.5,0.5,0.5]
 ROTATION_SPEED = 15
 
 def getIfromRGB(rgb):
@@ -89,7 +90,8 @@ class GraphicsContext(object):
         self.show_shadow_map = False
 
         self.cs = CoordinateSystemObject(0.1)
-        self.camera = OrbitingCamera()
+        up_axis = kwargs.get("up_axis", 1)
+        self.camera = OrbitingCamera(up_axis=up_axis)
         self.draw_labels = kwargs.get("draw_labels", False)
         self.activate_plots =  kwargs.get("activate_plots", True)
         if self.activate_plots:

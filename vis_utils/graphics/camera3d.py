@@ -40,6 +40,7 @@ UP = np.array([0,1,0])
 FORWARD = np.array([0,0,-1])
 
 
+
 class BoundigBox(object):
     def __init__(self):
         self.min_v = np.zeros(3)
@@ -130,7 +131,7 @@ class Camera(object):
 class OrbitingCamera(Camera):
     """ orbiting camera based on http://www.glprogramming.com/red/chapter03.html
     """
-    def __init__(self):
+    def __init__(self, up_axis=1):
         super().__init__()
         self.position = np.array([0.0,-10.0,0.0])
         self.zoom = -5.0
@@ -140,6 +141,13 @@ class OrbitingCamera(Camera):
         self.pitch = 0
         self.use_projection = True
         self._target = None
+        self.up_axis = up_axis
+        self.horizontal_axis = 0
+        self.forward_axis = 2
+        if self.up_axis ==2:
+            self.horizontal_axis = 0
+            self.forward_axis = 1
+        
 
     def setTarget(self, target):
         self._target = target
@@ -158,13 +166,17 @@ class OrbitingCamera(Camera):
             note direction is given by sign of the parameter
         """
         rad = math.radians(self.yaw)#(math.radians(self.yaw (self.yaw)/math.pi*180
-        self.position[0] -= distance*math.cos(rad)
-        self.position[2] -= distance*math.sin(rad)
+        self.position[self.horizontal_axis] -= distance*math.cos(rad)
+        self.position[self.forward_axis] -= distance*math.sin(rad)
+    
+    def moveVertically(self, distance):
+        self.position[self.up_axis] -= distance 
 
     def moveForward(self, distance):
         """  movement along relative forward vector
         """
-        forward_dir = np.array([0,0,-1,1])
+        forward_dir = np.array([0,0,0,1])
+        forward_dir[self.forward_axis] = -1
         forward_dir = np.dot(self.rotation_matrix, forward_dir)[:3]
         forward_dir /= np.linalg.norm(forward_dir)
         self.position += distance * forward_dir
@@ -174,8 +186,11 @@ class OrbitingCamera(Camera):
            http://www.fractalforums.com/fragmentarium/camera-control-via-3dmouse-outputting-simple-rotation-angles-and-trans-values/?PHPSESSID=007234c5bb433cffecc7c11f432697da;wap2
         """
         self.pitch = float(pitch)
-        self.yaw = float(yaw)           
-        rot_y = utils.get_rotation_around_y(math.radians(self.yaw))
+        self.yaw = float(yaw)
+        if self.up_axis == 2:
+            rot_y = utils.get_rotation_around_z(math.radians(self.yaw))
+        else:
+            rot_y = utils.get_rotation_around_y(math.radians(self.yaw))
         rot_x = utils.get_rotation_around_x(math.radians(self.pitch))
         self.rotation_matrix = np.dot(rot_y, rot_x)
         #self.lockRotation()#prevent degrees over 360 and under 360

@@ -44,6 +44,7 @@ from ..graphics.geometry.mesh import Mesh
 from ..scene.utils import get_random_color
 from .scene_object_builder import SceneObjectBuilder, DEFAULT_DENSITY
 from .scene_edit_widget import SceneEditWidget
+from transformations import quaternion_matrix, quaternion_about_axis
 
 
 def load_json_file(file_path):
@@ -55,7 +56,7 @@ def load_json_file(file_path):
 class EditorScene(Scene):
     """class for scenes that are supposed to be visualized """
 
-    def __init__(self, visualize=True, sim=None, **kwargs):
+    def __init__(self, visualize=True, sim=None, scale=1.0, up_axis=1, **kwargs):
         Scene.__init__(self, visualize, sim)
         self.added_scene_object = Signal()
         self.updated_animation_frame = Signal()
@@ -64,12 +65,15 @@ class EditorScene(Scene):
         self.update_scene_object = Signal()
         self.create_ground = kwargs.get("create_ground", True)
         if self.visualize:
-            self._create_visual_reference_frame()
-            if constants.activate_simulation:
-                self.contact_renderer = self.object_builder.create_object("contact_renderer",0.5, [0, 5, 0])
+            self._create_visual_reference_frame(up_axis, scale=10)
+            if constants.activate_simulation and constants.visualize_contacts:
+                self.contact_renderer = self.object_builder.create_object("contact_renderer",0.2, [0, 5, 0])
                 self.addObject(self.contact_renderer)
-            self.scene_edit_widget = SceneEditWidget()
+            else:
+                self.contact_renderer = None
+            self.scene_edit_widget = SceneEditWidget(scale)
         else:
+            
             self.ground = None
             self.scene_edit_widget = None
         self.enable_scene_edit_widget = False
@@ -79,29 +83,42 @@ class EditorScene(Scene):
         if self.selected_scene_object is not None and self.selected_scene_object != self.ground:
             self.scene_edit_widget.visible = self.enable_scene_edit_widget
 
-    def _create_visual_reference_frame(self, scale=1):
-        self.add_directional_light(scale)
-        self.addObject(CoordinateSystemObject(10))
-        if not self.create_ground:
-            return
-        self.ground = SceneObject()
-        self.ground.clickable = False
+    def _create_visual_reference_frame(self, up_axis, scale=1):
+        target = np.array([0.0, 0.0, 0.0])
+        pos = np.array([20, 100, 10]) * scale
+        up_vector = np.array([0.0, 1.0, 0.0])
+        ground_transform = np.eye(4)
+        if up_axis == 2:
+            pos = np.array([20, 0, 100]) * scale
+            up_vector = np.array([0.0, 0.0, 1.0])
+            q = quaternion_about_axis(-90*np.pi/180, [1,0,0])
+            ground_transform = quaternion_matrix(q)
+
+
+        self.add_directional_light(pos, target, up_vector, scale)
+        self.addObject(CoordinateSystemObject(scale))
+        self.ground = self.create_ground_plane(ground_transform)
+        return self.ground
+        
+    def create_ground_plane(self, transform):
+        ground = SceneObject()
+        ground.clickable = False
         diffuse_texture = Texture()
         diffuse_texture.make_chessboard()
         material = TextureMaterial(diffuse_texture)
         geom = Mesh.build_plane(10000, 10000, 8, 100, material)
-        self.ground._components["geometry"] = GeometryDataComponent(self.ground, geom)
-        self.addObject(self.ground)
+        ground._components["geometry"] = GeometryDataComponent(ground, geom)
+        ground.transformation = transform
+        self.addObject(ground)
+        return ground
 
-    def add_directional_light(self, scale):
+    def add_directional_light(self, pos, target, up_vector, scene_scale):
         o = SceneObject()
-        origin = np.array([0.0, 0.0, 0.0])
         intensities = np.array([1, 1, 1])
-        pos = np.array([20 * scale, 100 * scale, 10 * scale])
         w = SHADOW_MAP_WIDTH
         h = SHADOW_MAP_HEIGHT
         shadow_box_length = SHADOW_BOX_LENGTH
-        l = DirectionalLight(pos, origin, np.array([0.0, 1.0, 0.0]), intensities, w, h, scene_scale=scale,shadow_box_length=shadow_box_length)
+        l = DirectionalLight(pos, target, up_vector, intensities, w, h, scene_scale=scene_scale,shadow_box_length=shadow_box_length)
         o._components["light"] = LightComponent(o, l)
         self.addObject(o)
 
@@ -187,6 +204,7 @@ class EditorScene(Scene):
                 anim_controllers.append(anim_controller)
         return anim_controllers
 
+
     def runPythonScript(self, filename):
         with open(filename, "r") as script_file:
             lines = script_file.read()
@@ -212,7 +230,8 @@ class EditorScene(Scene):
 
     def update(self, dt):
         super().update(dt)
-        self.scene_edit_widget.update(dt)
+        if self.scene_edit_widget is not None:
+            self.scene_edit_widget.update(dt)
 
     def deactivate_axis(self):
         if self.scene_edit_widget is not None:
