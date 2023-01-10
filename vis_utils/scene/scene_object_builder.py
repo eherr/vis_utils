@@ -20,10 +20,11 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
-import os
-import numpy as np
+
 from collections import OrderedDict
+from vis_utils.graphics.asset_manager import AssetManager
 from .scene_object import SceneObject
+
 
 DEFAULT_COLOR = (0.5, 0.5, 0.0)
 
@@ -44,6 +45,7 @@ class SceneObjectBuilder(object):
 
     def __init__(self):
         self._scene = None
+        self.asset_manager = AssetManager.get_instance()
 
     @classmethod
     def get_instance(cls):
