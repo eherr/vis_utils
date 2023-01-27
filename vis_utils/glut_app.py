@@ -95,35 +95,15 @@ class CameraController(object):
 
 class GLUTApp(AppBase):
     def __init__(self, width, height, title="GLUTApp", **kwargs):
-        maxfps=kwargs.get("maxfps",DEFAULT_FPS)
-        sim_dt=kwargs.get("sim_dt",DEFAULT_SIM_DT)
-        sim_settings=kwargs.get("sim_settings",None)
-        AppBase.__init__(self, maxfps=maxfps, sim_dt=sim_dt, sim_settings=sim_settings)
-        
-        sync_sim=kwargs.get("sync_sim",True)
-        self.use_frame_buffer=kwargs.get("use_frame_buffer",True)
-        activate_simulation=kwargs.get("activate_simulation",True)
-        up_axis=kwargs.get("up_axis",1)
         self.width = width
         self.height = height
         self.aspect = float(width) / float(height)
         self.init_graphics_context(width, height, title, **kwargs)
-
-        visualize = True
-        sim = None
-        if activate_simulation and physics_utils is not None:
-            sim = self.init_simulation()
-        self.scene = EditorScene(visualize, sim=sim, up_axis=up_axis)
-        self.visualize = visualize
-        self.keyboard_handler = dict()
-        self.last_time = time.perf_counter()
-        self.next_time = self.last_time+self.interval
-        self.scene.global_vars["step"] = 0
-        self.scene.global_vars["fps"] = self.maxfps
-        self.synchronize_simulation = sync_sim and self.scene.sim is not None
+        kwargs["visualize"] = True
+        AppBase.__init__(self, **kwargs)
+        self.use_frame_buffer=kwargs.get("use_frame_buffer",True)
         self.last_click_position = np.zeros(3)
-        if visualize:
-            self.reshape(width, height)
+        self.reshape(width, height)
         self.is_running = False
         self.enable_object_selection = False
 

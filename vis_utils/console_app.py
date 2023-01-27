@@ -20,50 +20,15 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
-import time
-from .scene.scene import Scene
-from .app_base import AppBase, DEFAULT_SIM_DT, DEFAULT_FPS
-
+from .app_base import AppBase
 
 class ConsoleApp(AppBase):
-    def __init__(self, fps=DEFAULT_FPS, sim_settings=None, sync_sim=True, sim_dt=DEFAULT_SIM_DT):
-        AppBase.__init__(self, maxfps=fps, sim_dt=sim_dt,sim_settings=sim_settings)
-        sim = None
-        if self.activate_simulation:
-            sim = self.init_simulation()
-        self.scene = Scene(False, sim=sim)
-        self.keyboard_handler = dict()
-
-        self.last_time = time.perf_counter()
-        self.next_time = self.last_time+self.interval
-        self.scene.global_vars["step"] = 0
-        self.scene.global_vars["fps"] = self.maxfps
-        self.synchronize_simulation = sync_sim and self.scene.sim is not None
-        self.is_running = False
-        self.visualize = False
-
-    def update(self):
-        t = time.perf_counter()
-        if self.fixed_dt:
-            dt = self.interval
-        else:
-            while t < self.next_time:
-                st = self.next_time - t
-                time.sleep(st)
-                t = time.perf_counter()
-            dt = t - self.last_time
-        self.last_time = t
-        fps= 1.0/dt
-        if self.synchronize_updates:
-            self.update_scene(dt)
-        self.next_time = self.last_time + self.interval
-        self.scene.global_vars["fps"] = fps
+    def __init__(self,  **kwargs):
+        kwargs["visualize"] = False
+        super(ConsoleApp, self).__init__(**kwargs)
 
     def run(self):
         print("run")
         self.is_running = True
         while self.is_running:
             self.update()
-
-
-
