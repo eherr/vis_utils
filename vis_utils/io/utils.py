@@ -25,9 +25,18 @@ import glob
 import json
 import numpy as np
 
+
+class CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, type):
+            return str(obj)
+        return json.JSONEncoder.default(self, obj)
+
 def save_json_file(data, file_path, indent=4):
     with open(file_path, "w") as out_file:
-        return json.dump(data, out_file, indent=indent)
+        return json.dump(data, out_file, indent=indent, cls=CustomEncoder)
 
 
 def load_json_file(file_path):
