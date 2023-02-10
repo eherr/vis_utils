@@ -20,7 +20,7 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
-
+import importlib
 from collections import OrderedDict
 from vis_utils.graphics.asset_manager import AssetManager
 from .scene_object import SceneObject
@@ -41,6 +41,7 @@ class SceneObjectBuilder(object):
     construction_methods = OrderedDict()
     component_methods = OrderedDict()
     file_handler = OrderedDict()
+    dynamic_modules = OrderedDict()
     instance = None
 
     def __init__(self):
@@ -85,4 +86,17 @@ class SceneObjectBuilder(object):
                 break
         return o
 
+    @classmethod
+    def load_dynamic_module(cls, model_type, module_script):
+        if model_type in cls.dynamic_modules:
+            return
+        cls.dynamic_modules[model_type] = module_script
+        temp_module ="temp_module"
+        with open(temp_module+".py", "wt") as file:
+            file.write(module_script)
+        importlib.import_module(temp_module)
+
+    @classmethod
+    def has_dynamic_module(cls, model_type):
+        return model_type in cls.dynamic_modules
 
