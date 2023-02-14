@@ -75,6 +75,7 @@ class Camera(object):
         self.near = 0
         self.far = 0
         self.fov = 0
+        self.up_axis = 1
 
     def get_transform(self):
         """ Copied from ThinMatrix shadow tutorial
@@ -83,7 +84,11 @@ class Camera(object):
         """
         yaw = math.radians(self.yaw)
         pitch = math.radians(self.pitch)
-        rot_y = trans.quaternion_about_axis(-yaw, np.array([0, 1, 0]))
+        
+        if self.up_axis == 2:
+            rot_y = trans.quaternion_about_axis(-yaw, np.array([0, 0, 1]))# utils.get_rotation_around_z(math.radians(self.yaw))
+        else:
+            rot_y = trans.quaternion_about_axis(-yaw, np.array([0, 1, 0]))
         rot_y = trans.quaternion_matrix(rot_y)
         rot_x = trans.quaternion_about_axis(-pitch, np.array([1, 0, 0]))
         rot_x = trans.quaternion_matrix(rot_x)

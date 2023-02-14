@@ -181,7 +181,7 @@ class GraphicsContext(object):
             self.draw_imgui()
 
     def render_edit_widget(self, edit_widget, v_m, p_m, light_sources):
-        if edit_widget.visible:
+        if edit_widget is not None and edit_widget.visible:
             self.main_renderer.prepare(v_m, p_m, light_sources)
             for key in edit_widget.meshes:
                 geometry = edit_widget.meshes[key]

@@ -30,9 +30,7 @@ from ..graphics.materials import TextureMaterial, HeightMapMaterial
 from ..graphics.texture import Texture
 from ..graphics.constants import SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, SHADOW_BOX_LENGTH
 from ..graphics.light.directional_light import DirectionalLight
-from ..animation.point_cloud_animation_controller import PointCloudAnimationController
 from ..animation.group_animation_controller import GroupAnimationController
-from anim_utils.animation_data import BVHReader, MotionVector, SkeletonBuilder
 from .scene_object import SceneObject
 from .legacy import ConstraintObject, CoordinateSystemObject
 from .scene import Scene
@@ -63,21 +61,21 @@ class EditorScene(Scene):
         self.reached_end_of_animation = Signal()
         self.deleted_scene_object = Signal()
         self.update_scene_object = Signal()
-        self.create_ground = kwargs.get("create_ground", True)
-        if self.visualize:
-            self._create_visual_reference_frame(up_axis, scale=10)
-            if constants.activate_simulation and constants.visualize_contacts:
-                self.contact_renderer = self.object_builder.create_object("contact_renderer",0.2, [0, 5, 0])
-                self.addObject(self.contact_renderer)
-            else:
-                self.contact_renderer = None
-            self.scene_edit_widget = SceneEditWidget(scale)
-        else:
-            
-            self.ground = None
-            self.scene_edit_widget = None
+        self.ground = None
+        self.scene_edit_widget = None
         self.enable_scene_edit_widget = False
+        self.up_axis = up_axis
+        if self.visualize:
+            self.init_visualization(up_axis, scale)
 
+    def init_visualization(self, up_axis, scale):
+        self._create_visual_reference_frame(up_axis, scale=10)
+        if constants.activate_simulation and constants.visualize_contacts:
+            self.contact_renderer = self.object_builder.create_object("contact_renderer",0.2, [0, 5, 0])
+            self.addObject(self.contact_renderer)
+        else:
+            self.contact_renderer = None
+        self.scene_edit_widget = SceneEditWidget(scale)
     def toggle_scene_edit_widget(self):
         self.enable_scene_edit_widget = not self.enable_scene_edit_widget
         if self.selected_scene_object is not None and self.selected_scene_object != self.ground:
