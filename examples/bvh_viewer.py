@@ -27,6 +27,7 @@ def main(bvh_file):
     c_pose["position"] = [0, 0, -50]
     c_pose["angles"] = (45, 200)
     app = GLUTApp(800, 600, title="bvh player", camera_pose=c_pose)
+    o = app.scene.object_builder.create_object_from_file("bvh", bvh_file)
     c = o._components["animation_controller"]
     app.keyboard_handler["control"] = (control_func, (app, c))
     
