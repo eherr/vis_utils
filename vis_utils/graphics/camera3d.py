@@ -198,19 +198,11 @@ class OrbitingCamera(Camera):
             rot_y = utils.get_rotation_around_y(math.radians(self.yaw))
         rot_x = utils.get_rotation_around_x(math.radians(self.pitch))
         self.rotation_matrix = np.dot(rot_y, rot_x)
-        #self.lockRotation()#prevent degrees over 360 and under 360
-        #self.yaw %= 360
-        #self.pitch %= 360
+        self.lockRotation()
       
-    def lockRotation(self):
-        if self.yaw >360: 
-            self.yaw -=360
-        if self.yaw < 0:
-            self.yaw +=360
-        if self.pitch >360:
-            self.pitch -=360
-        if self.pitch < 0 :
-            self.pitch+=360
+    def lockRotation(self): 
+        self.yaw %= 360
+        self.pitch %= 360
 
     def set_projection_matrix(self, fov, aspect, near, far):
         f = 1.0/math.tan(math.radians(fov)*0.5)
@@ -300,11 +292,6 @@ class OrbitingCamera(Camera):
     def print_position(self):
         pose = self.pose_to_dict()
         print(pose)
-        #print("Camera Pose:")
-        #print("position:", self.position)
-        #print("pitch:", self.pitch)
-        #print("yaw:", self.yaw)
-        #print("zoom:", self.zoom)
         print()
 
 
