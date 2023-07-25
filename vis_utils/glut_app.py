@@ -71,7 +71,7 @@ class CameraController(object):
 
     def move(self, delta):
         self.camera.moveHorizontally(-delta[0] * self.translation_scale * 2)
-        self.camera.moveVertically(-delta[1] * self.translation_scale )
+        self.camera.moveVertically(delta[1] * self.translation_scale)
 
     def mouse_motion(self, x, y):
         delta = [x, y] - self.last_pos
